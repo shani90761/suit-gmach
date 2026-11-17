@@ -28,6 +28,6 @@ datas = (collect_data_files("django")
 a = Analysis(["launcher.py"], pathex=[ROOT], hiddenimports=hidden, datas=datas,
              excludes=["tkinter", "psycopg", "psycopg_binary", "gunicorn", "django.contrib.gis", "django.contrib.admin"], noarchive=False)
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="GemachSuits", console=True,
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="GemachSuits", console=False,
           icon=os.path.join(SPECPATH, "icon.ico") if os.path.exists(os.path.join(SPECPATH, "icon.ico")) else None)
 coll = COLLECT(exe, a.binaries, a.datas, name="GemachSuits")

@@ -2,7 +2,9 @@
 הנתונים נשמרים ב-%LOCALAPPDATA%\\GemachSuits (או ~/.gemach-suits בלינוקס/מק)."""
 import os
 import secrets
+import shutil
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -60,6 +62,37 @@ def backup(d):
         old.unlink()
 
 
+def find_app_browser():
+    """Edge (קיים בכל ווינדוס) או Chrome — לפתיחה בחלון אפליקציה משלה."""
+    override = os.environ.get("GEMACH_BROWSER")
+    if override:
+        return override
+    cands = []
+    for base in (os.environ.get("PROGRAMFILES(X86)"), os.environ.get("PROGRAMFILES"), os.environ.get("LOCALAPPDATA")):
+        if base:
+            cands += [Path(base) / "Microsoft/Edge/Application/msedge.exe",
+                      Path(base) / "Google/Chrome/Application/chrome.exe"]
+    for c in cands:
+        if c.exists():
+            return str(c)
+    for name in ("msedge", "google-chrome", "chromium", "chrome"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def open_app_window(d):
+    """פותח חלון אפליקציה ומחזיר את התהליך (או None אם אין דפדפן מתאים)."""
+    exe = find_app_browser()
+    if not exe:
+        webbrowser.open(URL)
+        return None
+    profile = d / "window"
+    return subprocess.Popen([exe, f"--app={URL}", f"--user-data-dir={profile}", "--window-size=1400,900",
+                             "--no-first-run", "--no-default-browser-check", "--disable-features=Translate"])
+
+
 def reminders_loop():
     from gemach.services import run_reminders
     while True:
@@ -71,13 +104,17 @@ def reminders_loop():
 
 
 def main():
-    for stream in (sys.stdout, sys.stderr):  # חלון שחור בווינדוס — שהעברית לא תפיל את התוכנה
+    if sys.stdout is None or sys.stderr is None:  # בלי חלון שחור — רושמים ללוג בתיקיית הנתונים
+        log = open(data_dir() / "app.log", "a", encoding="utf-8", buffering=1)
+        sys.stdout = sys.stdout or log
+        sys.stderr = sys.stderr or log
+    for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:  # noqa: BLE001
             pass
     if already_running():
-        webbrowser.open(URL)
+        open_app_window(data_dir())
         return
     d = data_dir()
     setup_env(d)
@@ -89,10 +126,17 @@ def main():
     from waitress import serve
     from config.wsgi import application
     threading.Thread(target=reminders_loop, daemon=True).start()
-    threading.Timer(1.2, lambda: webbrowser.open(URL)).start()
-    print("גמ\"ח חליפות לשמחות פועל בכתובת", URL)
-    print("לסגירת המערכת — סוגרים את החלון הזה.")
-    serve(application, host="127.0.0.1", port=PORT, threads=4)
+    threading.Thread(target=lambda: serve(application, host="127.0.0.1", port=PORT, threads=4), daemon=True).start()
+    for _ in range(50):  # מחכים שהשרת יעלה
+        if already_running():
+            break
+        time.sleep(0.1)
+    win = open_app_window(d)
+    if win is None:  # אין Edge/Chrome — נפתח בדפדפן הרגיל, והשרת רץ עד כיבוי המחשב
+        while True:
+            time.sleep(3600)
+    win.wait()  # סגירת החלון = סגירת המערכת
+    os._exit(0)
 
 
 if __name__ == "__main__":
