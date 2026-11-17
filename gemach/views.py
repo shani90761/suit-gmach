@@ -71,8 +71,9 @@ def customer_search(request):
     for c in Customer.objects.filter(cond).prefetch_related("orders")[:8]:
         orders = list(c.orders.all())
         nxt = min((o.event_date for o in orders if o.status == Order.BOOKED and o.event_date >= today()), default=None)
+        from . import hebcal
         out.append({"id": c.id, "name": c.name, "phone": c.phone, "orders": len(orders),
-                    "next": f"{nxt:%d.%m}" if nxt else "", "late": any(o.is_late for o in orders)})
+                    "next": hebcal.short(nxt) if nxt else "", "late": any(o.is_late for o in orders)})
     return JsonResponse({"customers": out})
 
 
@@ -166,9 +167,10 @@ def customer_lookup(request):
     out = []
     for c in Customer.objects.filter(phone=phone).prefetch_related("orders"):
         last = c.orders.order_by("-event_date").first()
+        from . import hebcal
         out.append({"id": c.id, "name": c.name, "email": c.email, "notes": c.notes,
                     "orders": c.orders.count(),
-                    "last": f"{last.event_date:%d.%m.%Y}" if last else ""})
+                    "last": hebcal.short(last.event_date) if last else ""})
     return JsonResponse({"customers": out})
 
 
@@ -358,15 +360,15 @@ def inventory(request):
                 size = request.POST["size"].strip()
                 if not size or not tag:
                     raise ValueError
-                if not re.fullmatch(r"[A-Z0-9-]{1,10}", tag):
-                    messages.error(request, "מספר תגית: אותיות באנגלית ומספרים בלבד, למשל A12.")
+                if not re.fullmatch(r"[A-Z]{1,6}", tag):
+                    messages.error(request, "תגית: אותיות באנגלית בלבד, למשל A או AB.")
                 elif Jacket.objects.filter(tag=tag).exists():
-                    messages.error(request, f"מספר תגית {tag} כבר קיים.")  # REQ-INV-4
+                    messages.error(request, f"התגית {tag} כבר קיימת.")  # REQ-INV-4
                 else:
                     Jacket.objects.create(tag=tag, model=mdl, size=size)
                     messages.success(request, f"ז'קט {tag} נוסף.")
             except (KeyError, ValueError):
-                messages.error(request, "צריך מספר תגית, דגם ומידה.")
+                messages.error(request, "צריך תגית, דגם ומידה.")
         elif a in ("disable", "enable", "delete"):
             j = get_object_or_404(Jacket, pk=request.POST.get("jacket"))
             if a == "disable":

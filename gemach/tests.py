@@ -243,11 +243,19 @@ class CalendarAndTagTests(TestCase):
         self.assertEqual(self.client.get("/api/calendar/?from=2030-01-01&to=2030-12-31").status_code, 400)
 
     def test_tag_letters_uppercase_and_validated(self):
-        self.client.post("/inventory/", {"action": "add_jacket", "tag": "a12", "model": self.m.id, "size": "4"})
-        self.assertTrue(Jacket.objects.filter(tag="A12").exists())
-        self.client.post("/inventory/", {"action": "add_jacket", "tag": "א1", "model": self.m.id, "size": "4"})
+        self.client.post("/inventory/", {"action": "add_jacket", "tag": "ab", "model": self.m.id, "size": "4"})
+        self.assertTrue(Jacket.objects.filter(tag="AB").exists())
+        for bad in ("A1", "א", "12"):
+            self.client.post("/inventory/", {"action": "add_jacket", "tag": bad, "model": self.m.id, "size": "4"})
         self.assertEqual(Jacket.objects.count(), 1)
 
     def test_natural_tag_order(self):
         from .models import tag_key
-        self.assertEqual(sorted(["A10", "A2", "B1", "A1"], key=tag_key), ["A1", "A2", "A10", "B1"])
+        self.assertEqual(sorted(["AB", "B", "AA", "Z", "A"], key=tag_key), ["A", "B", "Z", "AA", "AB"])
+
+    def test_hebrew_calendar(self):
+        from . import hebcal
+        self.assertEqual(hebcal.long(dt.date(2026, 11, 17)), "ז׳ כסלו תשפ״ז")
+        self.assertEqual(hebcal.full(dt.date(2026, 12, 12)), "יום שבת, ב׳ טבת")
+        self.assertEqual(hebcal.short(dt.date(2027, 3, 23)), "י״ד אדר ב׳")  # פורים בשנה מעוברת
+        self.assertEqual(hebcal.short(dt.date(2025, 10, 7)), "ט״ו תשרי")

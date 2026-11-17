@@ -39,7 +39,7 @@
 </div>
 <div class="card"><h2>מיילים שנשלחו</h2>
 {% if not order.customer.email %}<p class="empty">ללקוח אין מייל — לא נשלחים מיילים.</p>{% else %}
-<table><tbody>{% for e in emails %}<tr><td>{{ e.get_kind_display }}</td><td class="num">{{ e.sent_at|date:"j.n H:i" }}</td><td>{% if e.ok %}<span class="chip ok">נשלח</span>{% else %}<span class="chip bad" title="{{ e.error }}">נכשל</span>{% endif %}</td></tr>
+<table><tbody>{% for e in emails %}<tr><td>{{ e.get_kind_display }}</td><td class="num">{{ e.sent_at|hd }} · {{ e.sent_at|time:"H:i" }}</td><td>{% if e.ok %}<span class="chip ok">נשלח</span>{% else %}<span class="chip bad" title="{{ e.error }}">נכשל</span>{% endif %}</td></tr>
 {% empty %}<tr><td class="empty">עוד לא נשלחו מיילים.</td></tr>{% endfor %}</tbody></table>{% endif %}
 </div></div>
 {% endblock %}

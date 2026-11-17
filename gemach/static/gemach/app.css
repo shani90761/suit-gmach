@@ -243,7 +243,7 @@ dialog footer .l{display:flex;gap:8px}
 .greg{color:var(--ink-3);font-size:.85em;font-weight:400}
 .hd .greg{margin-inline-start:2px}
 /* Hebrew date picker */
-.hp-btn{height:40px;min-width:190px;border:1px solid var(--field);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 12px;text-align:right;display:inline-flex;align-items:center;gap:6px;font-size:15px}
+.hp-btn{height:40px;min-width:220px;border:1px solid var(--field);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 12px;text-align:right;display:inline-flex;align-items:center;gap:6px;font-size:15px}
 .hp-btn b{font-weight:500}
 .hp-btn:focus-visible,.hp-btn:hover{border-color:var(--navy)}
 .hp-ph{color:var(--ink-3)}
@@ -254,7 +254,7 @@ dialog footer .l{display:flex;gap:8px}
 .hp-nav{width:32px;height:32px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:18px;color:var(--navy)}
 .hp-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .hp-w{text-align:center;font-size:12px;color:var(--ink-3);padding:2px 0}
-.hp-d{border:1px solid transparent;background:transparent;border-radius:8px;height:40px;display:grid;place-items:center;line-height:1.05;padding:2px;color:var(--ink)}
+.hp-d{border:1px solid transparent;background:transparent;border-radius:8px;height:36px;display:grid;place-items:center;line-height:1.05;padding:2px;color:var(--ink)}
 .hp-d b{font-size:14px;font-weight:500}
 .hp-d small{font-size:10px;color:var(--ink-3)}
 .hp-d:hover{background:var(--blue-bg)}

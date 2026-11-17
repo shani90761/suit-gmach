@@ -13,7 +13,7 @@
     <label>שם<input name="name" required></label><label>תמונה<input type="file" name="image" accept="image/*"></label><button class="btn sm">הוספה</button></form></details>
 </div>
 <form class="card grid" method="post">{% csrf_token %}<input type="hidden" name="action" value="add_jacket"><h2>הוספת ז׳קט</h2>
-  <div class="row"><label style="flex:0 0 130px">מספר תגית<input name="tag" required placeholder="A12" pattern="[A-Za-z0-9\-]{1,10}" title="אותיות באנגלית ומספרים" dir="ltr" style="text-transform:uppercase"></label>
+  <div class="row"><label style="flex:0 0 130px">תגית<input name="tag" required placeholder="AB" pattern="[A-Za-z]{1,6}" title="אותיות באנגלית בלבד" dir="ltr" style="text-transform:uppercase"></label>
   <label>דגם<select name="model" required>{% for m in models %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}</select></label>
   <label style="flex:0 0 110px">מידה<input name="size" list="sizes" required></label></div>
   <datalist id="sizes">{% for s in sizes %}<option value="{{ s }}">{% endfor %}</datalist>

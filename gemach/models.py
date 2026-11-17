@@ -25,14 +25,14 @@ class Settings(models.Model):
         "שלום {name},\nההזמנה שלכם עודכנה.\n\n{lines}\n\nאיסוף: {pickup}\nהחזרה: {return}\n"
         "לתשלום: {total} ₪.\n\nלשאלות: {phone}"))
     tpl_cancel = models.TextField("נוסח: ביטול", default=(
-        "שלום {name},\nההזמנה שלכם לתאריך {event} בוטלה.\nלשאלות: {phone}"))
+        "שלום {name},\nההזמנה שלכם לשמחה ב{event} בוטלה.\nלשאלות: {phone}"))
     tpl_pickup = models.TextField("נוסח: תזכורת איסוף", default=(
-        "שלום {name},\nתזכורת: היום ({pickup}) אוספים את הז'קטים לשמחה.\n{lines}\n"
+        "שלום {name},\nתזכורת: היום, {pickup}, אוספים את הז'קטים לשמחה.\n{lines}\n"
         "לתשלום: {total} ₪ במזומן.\nבשמחות!"))
     tpl_return = models.TextField("נוסח: תזכורת החזרה", default=(
-        "שלום {name},\nמזל טוב! תזכורת: היום ({return}) מחזירים את הז'קטים.\nתודה רבה!"))
+        "שלום {name},\nמזל טוב! תזכורת: היום, {return}, מחזירים את הז'קטים.\nתודה רבה!"))
     tpl_late = models.TextField("נוסח: תזכורת איחור", default=(
-        "שלום {name},\nהז'קטים היו אמורים לחזור ב-{return} ועדיין לא הוחזרו.\n"
+        "שלום {name},\nהז'קטים היו אמורים לחזור ב{return} ועדיין לא הוחזרו.\n"
         "נשמח שתחזירו בהקדם — ילדים אחרים מחכים להם.\nלתיאום: {phone}"))
 
     class Meta:
@@ -60,14 +60,14 @@ class JacketModel(models.Model):
 
 
 def tag_key(tag):
-    """מיון טבעי של תגיות: A2 לפני A10."""
-    import re
-    return [(0, int(p)) if p.isdigit() else (1, p) for p in re.findall(r"\d+|\D+", str(tag))]
+    """מיון תגיות כמו בגיליון: A..Z, אחר כך AA, AB... (תגיות ישנות עם מספרים — בסוף)."""
+    t = str(tag)
+    return (0 if t.isalpha() else 1, len(t), t)
 
 
 class Jacket(models.Model):
     """ז'קט פיזי עם מספר תגית. REQ-INV-3..5."""
-    tag = models.CharField("מספר תגית", max_length=10, unique=True)  # REQ-INV-4 — אותיות באנגלית ומספרים, למשל A12
+    tag = models.CharField("תגית", max_length=10, unique=True)  # REQ-INV-4 — אותיות באנגלית בלבד, למשל AB
     model = models.ForeignKey(JacketModel, on_delete=models.PROTECT, related_name="jackets", verbose_name="דגם")
     size = models.CharField("מידה", max_length=10)
     active = models.BooleanField("פעיל", default=True)

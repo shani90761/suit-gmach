@@ -7,7 +7,7 @@
   const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   const pd = (s) => new Date(s + "T12:00");
   const HD = window.HebDate;
-  const dm = (s) => HD ? `${HD.short(s)} <small class="greg">${HD.greg(s)}</small>` : (() => { const d = pd(s); return `${d.getDate()}.${d.getMonth() + 1}`; })();
+  const dm = (s) => (HD ? HD.short(s) : s);
   const dn = (s) => "יום " + DAYS[pd(s).getDay()] + ",";
   const swatch = (n) => (n.includes("שחור") ? "#1b1b1b" : n.includes("שמנת") ? "#EFE6D2" : "#c9c4b8");
 

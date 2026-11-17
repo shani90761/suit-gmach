@@ -165,10 +165,11 @@ def _fmt(order, tpl):
     s = Settings.get()
     lines = "\n".join(f"• {l.model.name}, מידה {l.size}" + (f" — {l.child_name}" if l.child_name else "")
                       for l in order.live_lines)
+    from . import hebcal
     return tpl.format_map(_Safe(
         name=order.customer.name, lines=lines, total=order.total, phone=s.gemach_phone,
-        event=f"{order.event_date:%d.%m.%Y}", pickup=f"{order.pickup_date:%d.%m.%Y}",
-        **{"return": f"{order.return_date:%d.%m.%Y}"}))
+        event=hebcal.full(order.event_date), pickup=hebcal.full(order.pickup_date),
+        **{"return": hebcal.full(order.return_date)}))
 
 
 class _Safe(dict):

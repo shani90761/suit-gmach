@@ -16,14 +16,14 @@
   let cur=cal.dataset.start?H.toDate(cal.dataset.start):H.toDate(H.iso(new Date(Date.now()-new Date().getTimezoneOffset()*6e4)));
   async function draw(){
     const days=H.monthDays(cur), from=H.iso(days[0]), to=H.iso(days[days.length-1]);
-    document.getElementById('ctitle').innerHTML=`${H.monthTitle(days[0])} <small class="greg">${H.greg(from)} – ${H.greg(to)}</small>`;
+    document.getElementById('ctitle').textContent=H.monthTitle(days[0]);
     let data; try{data=await (await fetch(`${U}?from=${from}&to=${to}`)).json()}catch(e){cal.innerHTML='<div class="empty">לא ניתן לטעון את היומן.</div>';return}
     const by={}; data.events.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));
     const order={out:0,event:1,in:2};
     const lead=days[0].getUTCDay();
     cal.innerHTML=`<div class="cal-g">${H.DAYS.map(d=>`<div class="cal-w">${d}</div>`).join('')}${'<div class="cal-c pad"></div>'.repeat(lead)}${days.map(d=>{
       const s=H.iso(d), ev=(by[s]||[]).sort((a,b)=>order[a.kind]-order[b.kind]);
-      return `<div class="cal-c${s===data.today?' today':''}${d.getUTCDay()===6?' sh':''}"><div class="cal-n"><b>${H.gematria(H.parts(d).day)}</b><small>${H.greg(s)}</small></div>
+      return `<div class="cal-c${s===data.today?' today':''}${d.getUTCDay()===6?' sh':''}"><div class="cal-n"><b>${H.gematria(H.parts(d).day)}</b></div>
         ${ev.map(e=>`<a class="ev ${e.kind}${e.done?' done':''}${e.late?' late':''}" href="/orders/${e.order}/" title="${esc(KIND[e.kind]+': '+e.name+' · '+e.jackets)}">${e.done?'✓ ':''}${KIND[e.kind]} · ${esc(e.name)}${e.n>1?' ('+e.n+')':''}</a>`).join('')}</div>`}).join('')}</div>`;
   }
   document.getElementById('cprev').onclick=()=>{cur=H.addDays(H.monthDays(cur)[0],-1);draw()};

@@ -43,8 +43,7 @@
       const s = el.dataset.hd; if (!s) return;
       const f = el.dataset.hdFmt || "short";
       el.textContent = (f === "weekday" ? H.weekday(s) + ", " + H.short(s) : H[f](s));
-      if (el.dataset.hdGreg !== "0") { const g = document.createElement("small"); g.className = "greg"; g.textContent = H.greg(s); el.append(" ", g); }
-      el.title = H.weekday(s) + " · " + H.greg(s) + "." + toDate(s).getUTCFullYear();
+      el.title = H.weekday(s) + ", " + H.long(s);
       el.dataset.hdDone = "1";
     });
   }
@@ -55,7 +54,7 @@
     input.type = "hidden";
     const btn = document.createElement("button");
     btn.type = "button"; btn.className = "hp-btn";
-    const label = () => { btn.innerHTML = input.value ? `<b>${H.weekday(input.value)}, ${H.short(input.value)}</b> <small class="greg">${H.greg(input.value)}</small>` : '<span class="hp-ph">בחירת תאריך</span>'; };
+    const label = () => { btn.innerHTML = input.value ? `<b>${H.weekday(input.value)}, ${H.long(input.value)}</b>` : '<span class="hp-ph">בחירת תאריך</span>'; };
     label();
     input.after(btn);
     let pop = null, cur = null;
@@ -67,7 +66,7 @@
       pop.innerHTML = `<div class="hp-h"><button type="button" class="hp-nav" data-m="-1" aria-label="חודש קודם">›</button><b>${H.monthTitle(days[0])}</b><button type="button" class="hp-nav" data-m="1" aria-label="חודש הבא">‹</button></div>
         <div class="hp-g">${["א", "ב", "ג", "ד", "ה", "ו", "ש"].map((x) => `<span class="hp-w">${x}</span>`).join("")}${"<span></span>".repeat(lead)}${days.map((d) => {
           const s = iso(d);
-          return `<button type="button" class="hp-d${s === input.value ? " on" : ""}${s === today ? " today" : ""}${d.getUTCDay() === 6 ? " sh" : ""}" data-v="${s}"><b>${H.gematria(H.parts(d).day)}</b><small>${d.getUTCDate()}.${d.getUTCMonth() + 1}</small></button>`;
+          return `<button type="button" class="hp-d${s === input.value ? " on" : ""}${s === today ? " today" : ""}${d.getUTCDay() === 6 ? " sh" : ""}" data-v="${s}"><b>${H.gematria(H.parts(d).day)}</b></button>`;
         }).join("")}</div>
         <div class="hp-f"><button type="button" class="mini" data-today>היום</button></div>`;
       pop.querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => { const ds = H.monthDays(cur); cur = +b.dataset.m > 0 ? addDays(ds[ds.length - 1], 1) : addDays(ds[0], -1); draw(); }));

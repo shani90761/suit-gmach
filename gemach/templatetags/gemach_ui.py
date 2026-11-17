@@ -22,8 +22,18 @@ def phone(p):
 
 @register.filter
 def hd(d, fmt="short"):
-    """תאריך עברי (מוצג בדפדפן). fmt: short / long / weekday / day."""
-    from django.utils.html import format_html
+    """תאריך עברי. fmt: short (כ״ו כסלו) / long (+ שנה) / weekday (יום שישי, כ״ו כסלו) / day (כ״ו)."""
+    from .. import hebcal
     if not d:
         return ""
-    return format_html('<span class="hd" data-hd="{}" data-hd-fmt="{}">{}</span>', d.isoformat(), fmt, f"{d:%d.%m}")
+    if hasattr(d, "date") and callable(d.date):  # datetime
+        from django.utils import timezone
+        d = timezone.localtime(d).date() if timezone.is_aware(d) else d.date()
+    if fmt == "day":
+        return hebcal.gematria(hebcal.from_date(d)[2])
+    return {"long": hebcal.long, "weekday": hebcal.full}.get(fmt, hebcal.short)(d)
+
+
+@register.filter
+def weekday_letter(d):
+    return "אבגדהוש"[(d.weekday() + 1) % 7] + "׳"
