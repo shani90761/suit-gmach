@@ -1,0 +1,29 @@
+{% extends "gemach/base.html" %}{% block title %}ז׳קטים ודגמים{% endblock %}
+{% block content %}
+<h1>ז׳קטים ודגמים</h1><p class="sub">{{ jackets|length }} ז׳קטים במלאי.</p>
+<div class="grid g2">
+<div class="card grid"><h2>דגמים</h2>
+  {% for m in models %}<form method="post" enctype="multipart/form-data" class="row" style="align-items:center">{% csrf_token %}<input type="hidden" name="action" value="save_model"><input type="hidden" name="model_id" value="{{ m.id }}">
+    {% if m.image %}<img class="mthumb" src="{% url 'model_image' m.id %}" alt="{{ m.name }}">{% else %}<span class="mthumb" style="display:inline-block"></span>{% endif %}
+    <label>שם<input name="name" value="{{ m.name }}" required></label><label>תמונה<input type="file" name="image" accept="image/*"></label>
+    <button class="btn sm sec">שמירה</button></form>
+  {% endfor %}
+  <details><summary>+ דגם חדש</summary><form method="post" enctype="multipart/form-data" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="save_model">
+    <label>שם<input name="name" required></label><label>תמונה<input type="file" name="image" accept="image/*"></label><button class="btn sm">הוספה</button></form></details>
+</div>
+<form class="card grid" method="post">{% csrf_token %}<input type="hidden" name="action" value="add_jacket"><h2>הוספת ז׳קט</h2>
+  <div class="row"><label style="flex:0 0 110px">מספר תגית<input name="tag" type="number" min="1" value="{{ next_tag }}" required></label>
+  <label>דגם<select name="model" required>{% for m in models %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}</select></label>
+  <label style="flex:0 0 110px">מידה<input name="size" list="sizes" required></label></div>
+  <datalist id="sizes">{% for s in sizes %}<option value="{{ s }}">{% endfor %}</datalist>
+  <div><button class="btn">הוספה</button></div>
+</form>
+</div>
+<div class="card tw" style="margin-top:16px"><table><thead><tr><th>תגית</th><th>דגם</th><th>מידה</th><th>מצב</th><th></th></tr></thead><tbody>
+{% for j in jackets %}<tr><td class="num"><b>{{ j.tag }}</b></td><td>{{ j.model.name }}</td><td class="num">{{ j.size }}</td>
+<td>{% if j.active %}<span class="chip ok">פעיל</span>{% else %}<span class="chip warn">מושבת</span> {{ j.disabled_note }}{% endif %}</td>
+<td><form method="post" class="actions">{% csrf_token %}<input type="hidden" name="jacket" value="{{ j.id }}">
+{% if j.active %}<input name="note" placeholder="סיבת השבתה" style="width:160px"><button class="btn sm sec" name="action" value="disable">השבתה</button>
+{% else %}<button class="btn sm" name="action" value="enable">החזרה לפעיל</button>{% endif %}</form></td></tr>
+{% empty %}<tr><td colspan="5" class="empty">עוד אין ז׳קטים. הוסיפי את הראשון למעלה.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

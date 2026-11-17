@@ -1,0 +1,97 @@
+{% extends "gemach/base.html" %}{% block title %}{% if order %}עריכת הזמנה{% else %}הזמנה חדשה{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if order %}עריכת הזמנה {{ order.pk }}{% else %}הזמנה חדשה{% endif %}</h1>
+<p class="sub">האיסוף יום לפני השמחה, וההחזרה יום אחרי. ההזמנה נסגרת ברגע שלוחצים שמירה.</p>
+{% if errors %}<div class="alert bad" style="margin-bottom:16px"><h2>אי אפשר לשמור</h2><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post" class="grid" id="f">{% csrf_token %}
+<div class="card grid">
+  <h2>לקוח</h2>
+  <div class="row">
+    <label>טלפון<input name="phone" id="phone" inputmode="tel" required value="{{ f.phone }}" autofocus autocomplete="off"></label>
+    <label>שם<input name="name" id="name" value="{{ f.name }}" autocomplete="off"></label>
+    <label>מייל (לא חובה)<input name="email" id="email" type="email" value="{{ f.email }}" autocomplete="off"></label>
+  </div>
+  <input type="hidden" name="customer_id" id="customer_id" value="{{ f.customer_id }}">
+  <div class="suggest" id="suggest" hidden></div>
+  <div id="chosen" class="hint" hidden></div>
+</div>
+<div class="card grid">
+  <h2>שמחה וז׳קטים</h2>
+  <div class="row">
+    <label style="flex:0 0 200px">תאריך השמחה<input type="date" name="event_date" id="event_date" required value="{{ f.event_date }}"></label>
+    <span class="hint" id="dates"></span>
+  </div>
+  <div id="lines" class="grid" style="gap:8px">
+  {% for l in init_lines %}
+    <div class="line"><input type="hidden" name="line_id" value="{% if l.id %}{{ l.id }}{% endif %}">
+      <label>דגם<select name="line_model" required><option value="">בחירה</option>{% for m in models %}<option value="{{ m.id }}" {% if l.model_id == m.id or not l.model_id and prefill_model == m.id|stringformat:'d' %}selected{% endif %}>{{ m.name }}</option>{% endfor %}</select></label>
+      <label>מידה<input name="line_size" list="sizes" required value="{% if l.size %}{{ l.size }}{% else %}{{ prefill_size }}{% endif %}"></label>
+      <label>שם הילד (לא חובה)<input name="line_child" value="{{ l.child }}"></label>
+      <button type="button" class="btn sm danger rm" aria-label="הסרת שורה">הסרה</button>
+    </div>
+  {% endfor %}
+  </div>
+  <datalist id="sizes">{% for s in sizes %}<option value="{{ s }}">{% endfor %}</datalist>
+  <div><button type="button" class="btn sm sec" id="add">+ עוד ילד</button></div>
+</div>
+<div class="card grid">
+  <h2>עוד</h2>
+  <div class="row">
+    <label>מדידה (מה סוכם בטלפון)<input name="fitting_note" placeholder="למשל: יום ב׳ בערב" value="{{ f.fitting_note }}"></label>
+    <label>הערה<input name="note" value="{{ f.note }}"></label>
+  </div>
+  <label style="flex-direction:row;display:flex;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" name="no_email" value="1" style="width:auto"> לא לשלוח מייל ללקוח הפעם</label>
+</div>
+<div class="actions"><button class="btn copper">שמירת ההזמנה</button>{% if order %}<a class="btn sec" href="{% url 'order_detail' order.pk %}">ביטול עריכה</a>{% endif %}</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const lines=document.getElementById('lines');
+  document.getElementById('add').onclick=()=>{
+    const c=lines.firstElementChild.cloneNode(true);
+    c.querySelectorAll('input').forEach(i=>{i.value=''}); c.querySelector('select').value='';
+    lines.appendChild(c); c.querySelector('select').focus();
+  };
+  lines.addEventListener('click',e=>{ if(e.target.classList.contains('rm')&&lines.children.length>1) e.target.closest('.line').remove(); });
+
+  const ev=document.getElementById('event_date'), dates=document.getElementById('dates');
+  const fmt=d=>d.toLocaleDateString('he-IL',{weekday:'short',day:'numeric',month:'numeric'});
+  function showDates(){ if(!ev.value){dates.textContent='';return} const d=new Date(ev.value+'T12:00'); const a=new Date(d),b=new Date(d); a.setDate(d.getDate()-1); b.setDate(d.getDate()+1); dates.textContent='איסוף: '+fmt(a)+' · החזרה: '+fmt(b); }
+  ev.addEventListener('input',showDates); showDates();
+
+  // REQ-ORD-7a/7b — הצעה ולא דריסה
+  const phone=document.getElementById('phone'), name=document.getElementById('name'), email=document.getElementById('email');
+  const cid=document.getElementById('customer_id'), box=document.getElementById('suggest'), chosen=document.getElementById('chosen');
+  let lastPhone='';
+  function choose(c){ cid.value=c.id; name.value=c.name; name.readOnly=true; if(c.email&&!email.value) email.value=c.email;
+    box.hidden=true; chosen.hidden=false; chosen.innerHTML=''; const t=document.createElement('span');
+    t.textContent='לקוח קיים: '+c.name+(c.notes?' · הערה: '+c.notes:'')+' · ';
+    const b=document.createElement('button'); b.type='button'; b.className='btn sm sec'; b.textContent='לקוח אחר עם אותו טלפון';
+    b.onclick=newCust; chosen.append(t,b); }
+  function newCust(){ cid.value=''; name.readOnly=false; name.value=''; chosen.hidden=true; box.hidden=true; name.focus(); }
+  async function lookup(){
+    const p=phone.value.replace(/\D/g,''); if(p===lastPhone) return; lastPhone=p;
+    if(p.length<9){ box.hidden=true; return }
+    try{
+      const r=await fetch('{% url "customer_lookup" %}?phone='+p); const j=await r.json();
+      if(!j.customers.length){ if(cid.value) newCust(); box.hidden=true; return }
+      if(cid.value && j.customers.some(c=>String(c.id)===cid.value)) return;
+      box.innerHTML=''; const h=document.createElement('div');
+      h.textContent=j.customers.length===1?'הטלפון הזה כבר קיים. זה הלקוח?':'לטלפון הזה יש כמה לקוחות. מי מהם?';
+      const w=document.createElement('div'); w.className='who';
+      j.customers.forEach(c=>{ const b=document.createElement('button'); b.type='button'; b.className='btn sm';
+        b.textContent=c.name+' ('+c.orders+' הזמנות'+(c.last?', אחרונה '+c.last:'')+')'; b.onclick=()=>choose(c); w.appendChild(b); });
+      const o=document.createElement('button'); o.type='button'; o.className='btn sm sec'; o.textContent='לקוח אחר עם אותו טלפון'; o.onclick=newCust; w.appendChild(o);
+      box.append(h,w); box.hidden=false;
+    }catch(e){}
+  }
+  phone.addEventListener('input',()=>{ clearTimeout(phone._t); phone._t=setTimeout(lookup,300); });
+  phone.addEventListener('blur',lookup);
+  if(cid.value){ name.readOnly=true; chosen.hidden=false; chosen.innerHTML='';
+    const b=document.createElement('button'); b.type='button'; b.className='btn sm sec'; b.textContent='לקוח אחר עם אותו טלפון'; b.onclick=newCust;
+    const t=document.createElement('span'); t.textContent='לקוח קיים · '; chosen.append(t,b); lastPhone=phone.value.replace(/\D/g,''); }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,406 @@
+import datetime as dt
+
+from django.conf import settings as conf
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Q
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.crypto import constant_time_compare
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from . import services as S
+from .models import Customer, EmailLog, Jacket, JacketModel, Order, OrderLine, Settings, today
+
+
+def parse_date(s):
+    try:
+        return dt.date.fromisoformat(s)
+    except (TypeError, ValueError):
+        return None
+
+
+# ---------- מסך ראשי (§9) ----------
+
+def dashboard(request):
+    d = today()
+    tmr = d + dt.timedelta(days=1)
+    base = Order.objects.select_related("customer").prefetch_related("lines__model", "lines__jacket")
+    ctx = {
+        "late": S.late_orders(),
+        "disabled": Jacket.objects.filter(active=False).select_related("model"),
+        "shortages": S.shortages(),
+        "pickups": [(day, list(base.filter(status=Order.BOOKED, event_date=day + dt.timedelta(days=1))))
+                    for day in (d, tmr)],
+        "returns": [(day, list(base.filter(status=Order.PICKED, event_date=day - dt.timedelta(days=1))))
+                    for day in (d, tmr)],
+        "debts": [o for o in base.filter(status__in=[Order.PICKED, Order.RETURNED], paid=False)],
+        "today": d,
+    }
+    return render(request, "gemach/dashboard.html", ctx)
+
+
+def availability(request):
+    d = parse_date(request.GET.get("date"))
+    rows = S.availability_table(d) if d else []
+    return render(request, "gemach/availability.html", {
+        "date": d, "rows": rows,
+        "pickup": d - dt.timedelta(days=1) if d else None, "ret": d + dt.timedelta(days=1) if d else None})
+
+
+def availability_board(request):
+    """REQ-AV-4: לוח 14 ימים קדימה."""
+    start = parse_date(request.GET.get("from")) or today()
+    days = [start + dt.timedelta(days=i) for i in range(14)]
+    per_day = [S.availability(day) for day in days]
+    models = {m.id: m for m in JacketModel.objects.all()}
+    keys = sorted({k for a in per_day for k in a},
+                  key=lambda k: (models[k[0]].order, models[k[0]].name, S.size_key(k[1])))
+    rows = [{"model": models[k[0]], "size": k[1], "cells": [max(a.get(k, 0), 0) for a in per_day]} for k in keys]
+    return render(request, "gemach/board.html", {"days": days, "rows": rows, "start": start,
+                                                 "prev": start - dt.timedelta(days=14),
+                                                 "next": start + dt.timedelta(days=14)})
+
+
+# ---------- הזמנות (§5) ----------
+
+def order_list(request):
+    q = request.GET.get("q", "").strip()
+    show = request.GET.get("show", "open")
+    qs = Order.objects.select_related("customer").prefetch_related("lines")
+    if show == "open":
+        qs = qs.filter(status__in=S.OPEN)
+    if q:
+        digits = Customer.normalize_phone(q)
+        cond = Q(customer__name__icontains=q)
+        if digits:
+            cond |= Q(customer__phone__contains=digits)
+        qs = qs.filter(cond)
+    qs = qs.order_by("-event_date" if show == "all" else "event_date")[:300]
+    return render(request, "gemach/orders.html", {"orders": qs, "q": q, "show": show})
+
+
+def customer_lookup(request):
+    """REQ-ORD-7/7a/7b: מחזיר את כל הלקוחות עם הטלפון — המסך רק מציע."""
+    phone = Customer.normalize_phone(request.GET.get("phone"))
+    if len(phone) < 9:
+        return JsonResponse({"customers": []})
+    out = []
+    for c in Customer.objects.filter(phone=phone).prefetch_related("orders"):
+        last = c.orders.order_by("-event_date").first()
+        out.append({"id": c.id, "name": c.name, "email": c.email, "notes": c.notes,
+                    "orders": c.orders.count(),
+                    "last": f"{last.event_date:%d.%m.%Y}" if last else ""})
+    return JsonResponse({"customers": out})
+
+
+def _lines_from_post(post):
+    ids, models_, sizes, kids = (post.getlist(k) for k in ("line_id", "line_model", "line_size", "line_child"))
+    lines = []
+    for i in range(len(models_)):
+        if not models_[i] or not sizes[i]:
+            continue
+        lines.append({"id": int(ids[i]) if i < len(ids) and ids[i] else None, "model_id": int(models_[i]),
+                      "size": sizes[i].strip(), "child": (kids[i] if i < len(kids) else "").strip()})
+    return lines
+
+
+def order_form(request, pk=None):
+    order = get_object_or_404(Order, pk=pk) if pk else None
+    if order and order.status not in (Order.BOOKED,):
+        messages.error(request, "אפשר לערוך רק הזמנה שעוד לא נאספה.")
+        return redirect("order_detail", pk=order.pk)
+    errors = []
+    data = {}
+    if request.method == "POST":
+        p = request.POST
+        data = p
+        event = parse_date(p.get("event_date"))
+        lines = _lines_from_post(p)
+        phone = Customer.normalize_phone(p.get("phone"))
+        name = p.get("name", "").strip()
+        if not event:
+            errors.append("חסר תאריך שמחה.")
+        elif event < today() and not order:
+            errors.append("תאריך השמחה כבר עבר.")
+        if not lines:
+            errors.append("צריך לפחות ז'קט אחד.")
+        if len(phone) < 9:
+            errors.append("מספר טלפון לא תקין.")
+        if not p.get("customer_id") and not name:
+            errors.append("חסר שם לקוח.")
+        if not errors:
+            errors = S.check_lines(event, [(l["model_id"], l["size"]) for l in lines], exclude_order=order)
+        if not errors:
+            with transaction.atomic():
+                cid = p.get("customer_id")
+                email = p.get("email", "").strip()
+                if cid:
+                    cust = get_object_or_404(Customer, pk=cid, phone=phone)
+                    if email and not cust.email:  # לא דורסים — רק משלימים מייל חסר
+                        cust.email = email
+                        cust.save(update_fields=["email"])
+                else:
+                    cust = Customer.objects.create(name=name, phone=phone, email=email)
+                is_new = order is None
+                if is_new:
+                    order = Order(customer=cust)
+                order.customer = cust
+                order.event_date = event
+                order.note = p.get("note", "")
+                order.fitting_note = p.get("fitting_note", "")
+                order.save()
+                keep = set()
+                existing = {l.id: l for l in order.lines.filter(removed=False)}
+                for l in lines:
+                    obj = existing.get(l["id"]) or OrderLine(order=order)
+                    obj.model_id, obj.size, obj.child_name = l["model_id"], l["size"], l["child"]
+                    obj.save()
+                    keep.add(obj.id)
+                for lid, obj in existing.items():
+                    if lid not in keep:
+                        obj.delete()
+            if p.get("no_email") != "1":
+                S.send_order_email(order, "confirm" if is_new else "update")
+            messages.success(request, "ההזמנה נשמרה." if is_new else "ההזמנה עודכנה.")
+            return redirect("order_detail", pk=order.pk)
+    init_lines = ([{"id": l.id, "model_id": l.model_id, "size": l.size, "child": l.child_name}
+                   for l in order.live_lines] if order else [])
+    if request.method == "POST":
+        init_lines = _lines_from_post(request.POST)
+    src = request.POST if request.method == "POST" else {}
+    cust = order.customer if order else None
+    form = {
+        "phone": src.get("phone", cust.phone if cust else ""),
+        "name": src.get("name", cust.name if cust else ""),
+        "email": src.get("email", cust.email if cust else ""),
+        "customer_id": src.get("customer_id", cust.id if cust else ""),
+        "event_date": src.get("event_date", order.event_date.isoformat() if order else request.GET.get("date", "")),
+        "fitting_note": src.get("fitting_note", order.fitting_note if order else ""),
+        "note": src.get("note", order.note if order else ""),
+    }
+    ctx = {
+        "order": order, "errors": errors, "f": form,
+        "models": JacketModel.objects.all(), "sizes": S.all_sizes(),
+        "init_lines": init_lines or [{"id": None, "model_id": None, "size": "", "child": ""}],
+        "prefill_date": request.GET.get("date", ""),
+        "prefill_model": request.GET.get("model", ""), "prefill_size": request.GET.get("size", ""),
+    }
+    return render(request, "gemach/order_form.html", ctx)
+
+
+def order_detail(request, pk):
+    order = get_object_or_404(Order.objects.select_related("customer"), pk=pk)
+    lines = order.live_lines
+    pickup_options = []
+    if order.status == Order.BOOKED:
+        pickup_options = [(l, S.free_jackets_for(l)) for l in lines]
+    return render(request, "gemach/order_detail.html", {
+        "order": order, "lines": lines, "pickup_options": pickup_options,
+        "emails": order.emails.all()[:30],
+        "can_pickup_today": order.pickup_date <= today(),
+    })
+
+
+@require_POST
+def order_pickup(request, pk):
+    order = get_object_or_404(Order, pk=pk, status=Order.BOOKED)
+    assign = {}
+    for l in order.live_lines:
+        v = request.POST.get(f"jacket_{l.id}")
+        if v:
+            assign[l.id] = int(v)
+    errors = S.do_pickup(order, assign, paid=request.POST.get("paid") == "1")
+    if errors:
+        for e in errors:
+            messages.error(request, e)
+    else:
+        messages.success(request, "סומן כנאסף." + ("" if order.paid else " ההזמנה מסומנת ״חוב״."))
+    return redirect("order_detail", pk=pk)
+
+
+@require_POST
+def order_return(request, pk):
+    order = get_object_or_404(Order, pk=pk, status=Order.PICKED)
+    ids = {int(x) for x in request.POST.getlist("returned")}
+    damaged = {int(x) for x in request.POST.getlist("damaged")}
+    if not ids:
+        messages.error(request, "לא סומן אף ז'קט.")
+    else:
+        S.do_return(order, ids, damaged, request.POST.get("damage_note", "").strip())
+        messages.success(request, "ההחזרה נרשמה." + (" ז'קט פגום הושבת." if damaged & ids else ""))
+    return redirect("order_detail", pk=pk)
+
+
+@require_POST
+def order_action(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    a = request.POST.get("action")
+    if a == "cancel" and order.status == Order.BOOKED:  # REQ-CXL-1
+        order.status = Order.CANCELLED
+        order.save(update_fields=["status"])
+        if request.POST.get("no_email") != "1":
+            S.send_order_email(order, "cancel")
+        messages.success(request, "ההזמנה בוטלה והז'קטים התפנו.")
+    elif a == "remove_line" and order.status == Order.BOOKED:  # REQ-CXL-2
+        line = get_object_or_404(OrderLine, pk=request.POST.get("line"), order=order)
+        if len(order.live_lines) <= 1:
+            messages.error(request, "זו השורה האחרונה — אפשר לבטל את כל ההזמנה.")
+        else:
+            line.removed = True
+            line.save(update_fields=["removed"])
+            if request.POST.get("no_email") != "1":
+                S.send_order_email(order, "update")
+            messages.success(request, "השורה הוסרה.")
+    elif a == "paid":
+        order.paid = True
+        order.save(update_fields=["paid"])
+        messages.success(request, "סומן ששולם.")
+    elif a == "stop_late":
+        order.late_reminders_stopped = not order.late_reminders_stopped
+        order.save(update_fields=["late_reminders_stopped"])
+        messages.success(request, "תזכורות האיחור " + ("נעצרו." if order.late_reminders_stopped else "חודשו."))
+    elif a == "resend":
+        kind = request.POST.get("kind", "confirm")
+        e = S.send_order_email(order, kind)
+        messages.success(request, "המייל נשלח." if e and e.ok else "המייל לא נשלח — בדקי את הכתובת.")
+    return redirect("order_detail", pk=pk)
+
+
+# ---------- מלאי (§3) ----------
+
+def inventory(request):
+    if request.method == "POST":
+        a = request.POST.get("action")
+        if a == "add_jacket":
+            try:
+                tag = int(request.POST["tag"])
+                mdl = get_object_or_404(JacketModel, pk=request.POST["model"])
+                size = request.POST["size"].strip()
+                if not size:
+                    raise ValueError
+                if Jacket.objects.filter(tag=tag).exists():
+                    messages.error(request, f"מספר תגית {tag} כבר קיים.")  # REQ-INV-4
+                else:
+                    Jacket.objects.create(tag=tag, model=mdl, size=size)
+                    messages.success(request, f"ז'קט {tag} נוסף.")
+            except (KeyError, ValueError):
+                messages.error(request, "צריך מספר תגית, דגם ומידה.")
+        elif a in ("disable", "enable", "delete"):
+            j = get_object_or_404(Jacket, pk=request.POST.get("jacket"))
+            if a == "disable":
+                j.active, j.disabled_note = False, request.POST.get("note", "").strip()
+                j.save()
+                messages.success(request, f"ז'קט {j.tag} הושבת.")
+            elif a == "enable":
+                j.active, j.disabled_note = True, ""
+                j.save()
+                messages.success(request, f"ז'קט {j.tag} חזר לפעיל.")
+            else:
+                if j.lines.exists():
+                    messages.error(request, "אי אפשר למחוק ז'קט שהיה בהזמנות. אפשר להשבית אותו.")
+                else:
+                    j.delete()
+                    messages.success(request, "הז'קט נמחק.")
+        elif a == "save_model":
+            mid = request.POST.get("model_id")
+            m = get_object_or_404(JacketModel, pk=mid) if mid else JacketModel()
+            m.name = request.POST.get("name", "").strip() or m.name
+            m.description = request.POST.get("description", "").strip()
+            f = request.FILES.get("image")
+            if f:
+                if f.size > conf.MAX_IMAGE_BYTES or not (f.content_type or "").startswith("image/"):
+                    messages.error(request, "התמונה גדולה מדי (עד 1.5MB) או שאינה תמונה.")
+                    return redirect("inventory")
+                m.image, m.image_type = f.read(), f.content_type
+            if m.name:
+                m.save()
+                messages.success(request, f"הדגם {m.name} נשמר.")
+        return redirect("inventory")
+    jackets = Jacket.objects.select_related("model")
+    return render(request, "gemach/inventory.html", {
+        "models": JacketModel.objects.all(), "jackets": jackets, "sizes": S.all_sizes(),
+        "next_tag": (max([j.tag for j in jackets] or [0]) + 1),
+    })
+
+
+def model_image(request, pk):
+    m = get_object_or_404(JacketModel, pk=pk)
+    if not m.image:
+        return HttpResponse(status=404)
+    r = HttpResponse(bytes(m.image), content_type=m.image_type or "image/jpeg")
+    r["Cache-Control"] = "private, max-age=3600"
+    return r
+
+
+# ---------- לקוחות ----------
+
+def customers(request):
+    q = request.GET.get("q", "").strip()
+    qs = Customer.objects.all()
+    if q:
+        d = Customer.normalize_phone(q)
+        qs = qs.filter(Q(name__icontains=q) | (Q(phone__contains=d) if d else Q(pk__in=[])))
+    return render(request, "gemach/customers.html", {"customers": qs[:300], "q": q})
+
+
+def customer_detail(request, pk):
+    c = get_object_or_404(Customer, pk=pk)
+    if request.method == "POST":
+        a = request.POST.get("action")
+        if a == "save":
+            c.name = request.POST.get("name", c.name).strip() or c.name
+            c.phone = request.POST.get("phone", c.phone)
+            c.email = request.POST.get("email", "").strip()
+            c.notes = request.POST.get("notes", "")
+            c.save()
+            messages.success(request, "הפרטים נשמרו.")
+        elif a == "delete":
+            if c.orders.filter(status__in=S.OPEN).exists():
+                messages.error(request, "ללקוח יש הזמנה פתוחה — אי אפשר למחוק.")
+            else:
+                c.orders.all().delete()
+                c.delete()
+                messages.success(request, "הלקוח וההיסטוריה שלו נמחקו.")
+                return redirect("customers")
+        return redirect("customer_detail", pk=pk)
+    return render(request, "gemach/customer_detail.html", {"c": c, "orders": c.orders.order_by("-event_date")})
+
+
+# ---------- הגדרות ----------
+
+def settings_view(request):
+    s = Settings.get()
+    if request.method == "POST":
+        s.gemach_phone = request.POST.get("gemach_phone", s.gemach_phone).strip()
+        try:
+            s.reminder_hour = max(0, min(23, int(request.POST.get("reminder_hour", s.reminder_hour))))
+        except ValueError:
+            pass
+        s.same_day_turnover = request.POST.get("same_day_turnover") == "1"
+        for k in ("confirm", "update", "cancel", "pickup", "return", "late"):
+            v = request.POST.get(f"tpl_{k}")
+            if v is not None and v.strip():
+                setattr(s, f"tpl_{k}", v)
+        s.save()
+        messages.success(request, "ההגדרות נשמרו.")
+        return redirect("settings")
+    tpls = [("confirm", "אישור הזמנה"), ("update", "עדכון הזמנה"), ("cancel", "ביטול"),
+            ("pickup", "תזכורת איסוף"), ("return", "תזכורת החזרה"), ("late", "תזכורת איחור")]
+    return render(request, "gemach/settings.html", {
+        "s": s, "tpls": [(k, label, getattr(s, f"tpl_{k}")) for k, label in tpls], "hours": range(6, 23)})
+
+
+# ---------- תזכורות (נקרא מבחוץ) ----------
+
+@csrf_exempt
+def cron(request):
+    token = request.GET.get("token") or request.headers.get("X-Cron-Token", "")
+    if not conf.CRON_TOKEN or not constant_time_compare(token, conf.CRON_TOKEN):
+        return HttpResponseForbidden("bad token")
+    return JsonResponse({"ok": True, "sent": S.run_reminders()})
+
+
+def healthz(request):
+    return HttpResponse("ok")

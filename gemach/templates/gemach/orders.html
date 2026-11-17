@@ -1,0 +1,11 @@
+{% extends "gemach/base.html" %}{% block title %}הזמנות{% endblock %}
+{% block content %}
+<div class="head"><h1>הזמנות</h1><a class="btn copper" href="{% url 'order_new' %}">+ הזמנה חדשה</a></div>
+<form class="card row" style="margin-bottom:16px"><label>חיפוש לפי שם או טלפון<input name="q" value="{{ q }}" autofocus></label>
+<label style="flex:0 0 160px">להציג<select name="show"><option value="open" {% if show == 'open' %}selected{% endif %}>פתוחות</option><option value="all" {% if show == 'all' %}selected{% endif %}>הכל</option></select></label>
+<button class="btn sec">חיפוש</button></form>
+<div class="card tw"><table><thead><tr><th>#</th><th>לקוח</th><th>טלפון</th><th>שמחה</th><th>ז׳קטים</th><th>מצב</th></tr></thead><tbody>
+{% for o in orders %}<tr><td class="num"><a href="{% url 'order_detail' o.pk %}">{{ o.pk }}</a></td><td><a href="{% url 'order_detail' o.pk %}">{{ o.customer.name }}</a></td><td class="num">{{ o.customer.phone }}</td><td class="num">{{ o.event_date|date:"j.n.Y" }}</td><td>{{ o.live_lines|length }}</td>
+<td>{% include "gemach/_status.html" %}</td></tr>
+{% empty %}<tr><td colspan="6" class="empty">לא נמצאו הזמנות.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

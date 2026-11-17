@@ -1,0 +1,32 @@
+{% extends "gemach/base.html" %}{% block title %}מסך ראשי{% endblock %}
+{% block content %}
+<div class="head"><div><h1>מסך ראשי</h1><p class="sub" style="margin:0">{{ today|date:"l, j.n.Y" }}</p></div>
+  <form class="quick" action="{% url 'availability' %}"><label style="flex-direction:row">מה פנוי לשמחה בתאריך<input type="date" name="date" required></label><button class="btn sec">בדיקה</button></form>
+</div>
+<div class="grid">
+{% if late %}<div class="alert bad"><h2>באיחור ({{ late|length }})</h2><ul>
+  {% for o in late %}<li><a href="{% url 'order_detail' o.pk %}">{{ o.customer.name }}</a> · {{ o.customer.phone }} · היה צריך לחזור ב-{{ o.return_date|date:"j.n" }} · ז׳קטים {% for l in o.live_lines %}{% if not l.returned %}{{ l.jacket.tag }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}</li>{% endfor %}
+</ul></div>{% endif %}
+{% if shortages %}<div class="alert bad"><h2>חסרים ז׳קטים להזמנות עתידיות</h2><ul>
+  {% for s in shortages %}<li><a href="{% url 'order_detail' s.order.pk %}">{{ s.order.customer.name }} · {{ s.order.event_date|date:"j.n.Y" }}</a> — {{ s.errors|join:"; " }}</li>{% endfor %}
+</ul></div>{% endif %}
+{% if disabled %}<div class="alert warn"><h2>ז׳קטים מושבתים ({{ disabled|length }})</h2><ul>
+  {% for j in disabled %}<li>{{ j.tag }} · {{ j.model.name }} {{ j.size }}{% if j.disabled_note %} — {{ j.disabled_note }}{% endif %}</li>{% endfor %}
+</ul><p style="margin:6px 0 0"><a href="{% url 'inventory' %}">לניהול ז׳קטים</a></p></div>{% endif %}
+
+<div class="grid g2">
+  {% for day, orders in pickups %}
+  <div class="card"><h2>איסוף {% if forloop.first %}היום{% else %}מחר{% endif %} <span class="n">{{ day|date:"j.n" }} · {{ orders|length }}</span></h2>
+    {% if orders %}<table><tbody>{% for o in orders %}<tr><td><a href="{% url 'order_detail' o.pk %}">{{ o.customer.name }}</a></td><td class="num">{{ o.customer.phone }}</td><td>{{ o.live_lines|length }} ז׳קטים</td><td class="num">{{ o.total }} ₪</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="empty">אין איסופים.</p>{% endif %}</div>
+  {% endfor %}
+  {% for day, orders in returns %}
+  <div class="card"><h2>החזרה {% if forloop.first %}היום{% else %}מחר{% endif %} <span class="n">{{ day|date:"j.n" }} · {{ orders|length }}</span></h2>
+    {% if orders %}<table><tbody>{% for o in orders %}<tr><td><a href="{% url 'order_detail' o.pk %}">{{ o.customer.name }}</a></td><td class="num">{{ o.customer.phone }}</td><td>{% for l in o.live_lines %}{{ l.jacket.tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="empty">אין החזרות.</p>{% endif %}</div>
+  {% endfor %}
+</div>
+{% if debts %}<div class="card"><h2>חוב — נאסף ולא שולם <span class="n">{{ debts|length }}</span></h2>
+  <table><tbody>{% for o in debts %}<tr><td><a href="{% url 'order_detail' o.pk %}">{{ o.customer.name }}</a></td><td class="num">{{ o.customer.phone }}</td><td>{{ o.event_date|date:"j.n.Y" }}</td><td class="num">{{ o.total }} ₪</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+</div>
+{% endblock %}

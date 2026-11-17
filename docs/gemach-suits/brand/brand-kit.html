@@ -1,0 +1,196 @@
+<title>ערכת מיתוג חליפות לשמחות</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@400;500;700&display=swap">
+<style>
+/* Layout: brand book — sections stacked; each shows the real item (logo, tag, bag, ad, sign) drawn in brand colors */
+:root{
+  --stone:#E3D5BA; --stone-lt:#F3ECDD; --navy:#22304A; --navy-dk:#182338; --copper:#A6743F; --ink:#1B2233;
+  --bg:#F7F4EE; --fg:#1B2233; --muted:#6C6A64; --line:#DCD4C4; --panel:#FFFFFF;
+  --display:"Frank Ruhl Libre","David Libre",Georgia,serif;
+  --body:"Heebo","Arial Hebrew",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#13161D;--fg:#ECE7DD;--muted:#A39E93;--line:#2E3340;--panel:#1B1F28;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13161D;--fg:#ECE7DD;--muted:#A39E93;--line:#2E3340;--panel:#1B1F28;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);direction:rtl;line-height:1.6}
+.wrap{max-width:1080px;margin:0 auto;padding-block:40px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:56px}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,4.4vw,40px);font-weight:700}
+h2{font-size:24px;font-weight:700}
+.lead{color:var(--muted);margin:6px 0 0;max-width:64ch}
+section{display:grid;gap:18px}
+.sec-head{display:grid;gap:4px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.sec-head p{margin:0;color:var(--muted);font-size:14px}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:760px){.g3,.g2{grid-template-columns:1fr}}
+.cap{font-size:13px;color:var(--muted);margin-top:8px}
+figure{margin:0;min-width:0}
+
+/* wordmark */
+.mark{display:grid;justify-items:center;gap:8px;text-align:center}
+.mark .gm{font-family:var(--display);font-weight:500;letter-spacing:.38em;font-size:.32em;padding-inline-start:.38em}
+.mark .big{font-family:var(--display);font-weight:900;line-height:1;font-size:1em;white-space:nowrap}
+.mark .city{display:flex;align-items:center;gap:.4em;font-family:var(--display);font-weight:500;letter-spacing:.42em;font-size:.26em;padding-inline-start:.42em}
+.mark .city::before,.mark .city::after{content:"";width:2.2em;height:1px;background:currentColor}
+.logo-tile{border-radius:4px;display:grid;place-items:center;padding:44px 16px;min-height:220px;overflow:hidden}
+.t-stone{background:var(--stone);color:var(--navy)} .t-stone .gm,.t-stone .city{color:var(--copper)}
+.t-navy{background:var(--navy);color:var(--stone-lt)} .t-navy .gm,.t-navy .city{color:#C99A63}
+.t-white{background:#fff;color:var(--ink);border:1px solid var(--line)} .t-white .gm,.t-white .city{color:var(--ink)}
+.logo-tile .mark{font-size:clamp(30px,4vw,42px)}
+.small-marks{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.monogram{width:96px;height:96px;border-radius:50%;background:var(--navy);display:grid;place-items:center;color:var(--stone-lt);font-family:var(--display);font-weight:900;font-size:30px;line-height:1;text-align:center;border:3px solid var(--stone)}
+.monogram span{display:block;font-size:10px;letter-spacing:.3em;color:#C99A63;font-weight:500;margin-top:4px;padding-inline-start:.3em}
+
+/* colors */
+.swatch{border-radius:4px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+.swatch .c{height:110px}
+.swatch .d{padding:10px 12px;display:grid;gap:2px;font-size:13px}
+.swatch .d b{font-size:15px}
+.swatch .d code{font-variant-numeric:tabular-nums;color:var(--muted);direction:ltr;text-align:right}
+.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:760px){.g5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* type */
+.type{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:22px;display:grid;gap:14px}
+.type .row{display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:baseline}
+@media (max-width:560px){.type .row{grid-template-columns:1fr;gap:2px}}
+.type .lbl{font-size:13px;color:var(--muted)}
+.fr{font-family:var(--display)} .hb{font-family:var(--body)}
+
+/* tag */
+.tags{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;padding:28px 16px;background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.tag{width:170px;height:290px;position:relative;display:grid;justify-items:center;align-content:start;gap:8px;padding:34px 14px 16px;text-align:center;clip-path:polygon(18% 0,82% 0,100% 9%,100% 100%,0 100%,0 9%)}
+.tag .hole{width:14px;height:14px;border-radius:50%;background:var(--panel);position:absolute;top:14px;left:calc(50% - 7px)}
+.tag.front{background:var(--navy);color:var(--stone-lt)}
+.tag.back{background:var(--stone);color:var(--navy)}
+.tag .mark{font-size:23px;margin-top:10px}
+.tag.front .gm,.tag.front .city{color:#C99A63}
+.tag .num{margin-top:auto;font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.2em;color:#C99A63}
+.tag .size{font-family:var(--display);font-weight:900;font-size:54px;line-height:1;border-block:1px solid var(--copper);padding:6px 22px;margin-top:18px}
+.tag .k{font-size:11px;letter-spacing:.2em;color:var(--copper);font-weight:700}
+.tag .fields{display:grid;gap:7px;width:100%;margin-top:14px;font-size:12px;text-align:right}
+.tag .fields div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(34,48,74,.35);padding-bottom:3px}
+
+/* bag */
+.bagstage{display:grid;place-items:center;padding:28px 16px;background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.bag{width:min(240px,100%);aspect-ratio:3/5;max-width:100%;background:var(--navy);position:relative;border-radius:6px 6px 10px 10px;display:grid;justify-items:center;align-content:center;gap:16px;color:var(--stone-lt)}
+.bag::before{content:"";position:absolute;top:-26px;left:calc(50% - 2px);width:4px;height:30px;background:#8A8F99;border-radius:2px}
+.bag::after{content:"";position:absolute;top:-34px;left:calc(50% - 14px);width:28px;height:14px;border:3px solid #8A8F99;border-bottom:none;border-radius:14px 14px 0 0}
+.bag .mark{font-size:28px} .bag .gm,.bag .city{color:#C99A63}
+.bag .foot{position:absolute;bottom:18px;font-size:12px;letter-spacing:.12em;color:var(--stone);direction:ltr}
+
+/* ad */
+.ad{aspect-ratio:1/1;max-width:100%;background:var(--stone);color:var(--navy);display:grid;grid-template-rows:auto 1fr auto;padding:28px;gap:12px;border-radius:4px;overflow:hidden}
+.ad .mark{font-size:30px}
+.ad .gm,.ad .city{color:var(--copper)}
+.ad .mid{display:grid;align-content:center;justify-items:center;gap:12px;text-align:center}
+.ad .h{font-family:var(--display);font-weight:700;font-size:clamp(18px,2.4vw,24px);line-height:1.25}
+.ad .models{display:flex;gap:14px;font-size:13px;font-weight:500}
+.ad .models span{display:flex;align-items:center;gap:6px}
+.ad .models i{width:14px;height:14px;border-radius:50%;display:block;border:1px solid var(--navy)}
+.ad .bot{background:var(--navy);color:var(--stone-lt);margin:0 -28px -28px;padding:14px 28px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ad .price{font-family:var(--display);font-weight:900;font-size:28px;color:#D7A86E;line-height:1}
+.ad .price small{font-family:var(--body);font-size:13px;font-weight:500;color:var(--stone-lt)}
+.ad .ph{font-weight:700;font-size:16px;direction:ltr;font-variant-numeric:tabular-nums}
+.ad .ph small{display:block;font-size:11px;font-weight:400;direction:rtl;text-align:left;opacity:.85}
+.profile{width:160px;height:160px;border-radius:50%;background:var(--navy);display:grid;place-items:center;color:var(--stone-lt);overflow:hidden;border:4px solid var(--stone)}
+.profile .mark{font-size:22px} .profile .gm,.profile .city{color:#C99A63}
+
+/* sign */
+.sign{background:var(--navy);color:var(--stone-lt);border:10px solid var(--stone);outline:1px solid var(--copper);outline-offset:-18px;padding:40px 24px;display:grid;justify-items:center;gap:18px;text-align:center;border-radius:2px}
+.sign .mark{font-size:clamp(34px,6vw,58px)} .sign .gm,.sign .city{color:#C99A63}
+.sign .info{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;font-size:15px;color:var(--stone)}
+.sign .info b{font-family:var(--display);color:#fff;font-size:18px;font-weight:700}
+
+.rules{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.rules li{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 14px;display:flex;gap:10px}
+.rules .ok{color:#3F7A4F;font-weight:700}.rules .no{color:#A2433A;font-weight:700}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>ערכת מיתוג · גמ״ח חליפות לשמחות</h1>
+    <p class="lead">פלטת אבן ירושלמית וכחול. הלוגו בנוי מטיפוגרפיה בלבד. כל הפריטים כאן מוכנים להעברה לגרפיקאי או לבית דפוס.</p>
+  </header>
+
+  <section>
+    <div class="sec-head"><h2>לוגו</h2><p>שלוש שורות: גמ״ח · חליפות לשמחות · ירושלים. משתמשים רק בגרסאות האלה.</p></div>
+    <div class="grid g3">
+      <figure><div class="logo-tile t-stone"><div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div></div><figcaption class="cap">ראשי, על רקע אבן</figcaption></figure>
+      <figure><div class="logo-tile t-navy"><div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div></div><figcaption class="cap">הפוך, על רקע כחול</figcaption></figure>
+      <figure><div class="logo-tile t-white"><div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div></div><figcaption class="cap">צבע אחד, להדפסה בשחור-לבן</figcaption></figure>
+    </div>
+    <div class="small-marks">
+      <div class="monogram"><div>ח״ל<span>ירושלים</span></div></div>
+      <p class="cap" style="margin:0;max-width:40ch">חותם קטן, למקומות שאין בהם מקום ללוגו המלא: מדבקה על שקית, פינה בתמונה, אייקון במערכת.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>צבעים</h2><p>שלושה צבעים ראשיים ושני גוונים משלימים.</p></div>
+    <div class="grid g5">
+      <div class="swatch"><div class="c" style="background:#E3D5BA"></div><div class="d"><b>אבן ירושלמית</b><span>רקע ראשי</span><code>#E3D5BA</code></div></div>
+      <div class="swatch"><div class="c" style="background:#22304A"></div><div class="d"><b>כחול לילה</b><span>טקסט ורקע יוקרתי</span><code>#22304A</code></div></div>
+      <div class="swatch"><div class="c" style="background:#A6743F"></div><div class="d"><b>נחושת</b><span>הדגשות, קווים</span><code>#A6743F</code></div></div>
+      <div class="swatch"><div class="c" style="background:#F3ECDD"></div><div class="d"><b>אבן בהירה</b><span>רקע למסכים</span><code>#F3ECDD</code></div></div>
+      <div class="swatch"><div class="c" style="background:#C99A63"></div><div class="d"><b>נחושת בהירה</b><span>על רקע כחול בלבד</span><code>#C99A63</code></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>גופנים</h2><p>שני גופנים חינמיים מ-Google Fonts.</p></div>
+    <div class="type">
+      <div class="row"><span class="lbl">פרנק רוהל ליברה<br>כותרות ולוגו</span><span class="fr" style="font-size:34px;font-weight:900">חליפה מכובדת לכל שמחה</span></div>
+      <div class="row"><span class="lbl">היבו<br>טקסט, מערכת</span><span class="hb" style="font-size:16px">מדידה ואיסוף בתיאום מראש. מחזירים את הז׳קט יום אחרי האירוע.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>תגית חליפה</h2><p>חזית ממותגת. בגב: מספר הז׳קט, מידה, דגם ומקום לכתוב בכתב יד.</p></div>
+    <div class="tags">
+      <div class="tag front"><span class="hole"></span><div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות<br>לשמחות</span><span class="city">ירושלים</span></div><span class="num">052-7614312</span></div>
+      <div class="tag back"><span class="hole"></span><span class="k">ז׳קט מס׳ 17</span><span class="size">8</span><span class="k">מידה</span>
+        <div class="fields"><div><span>דגם</span><b>קטיפה שחורה</b></div><div><span>איסוף</span><span>____</span></div><div><span>החזרה</span><span>____</span></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid g2">
+      <div>
+        <div class="sec-head" style="margin-bottom:16px"><h2>שקית חליפה</h2><p>כחול, עם לוגו באמצע וטלפון בתחתית.</p></div>
+        <div class="bagstage"><div class="bag"><div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות<br>לשמחות</span><span class="city">ירושלים</span></div><span class="foot">052-7614312</span></div></div>
+      </div>
+      <div>
+        <div class="sec-head" style="margin-bottom:16px"><h2>תמונת פרופיל לוואטסאפ</h2><p>עיגול כחול, עם הלוגו בקטן.</p></div>
+        <div class="bagstage"><div class="profile"><div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות<br>לשמחות</span><span class="city">ירושלים</span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>מודעת וואטסאפ</h2><p>בפורמט ריבועי, לשליחה בקבוצות ובסטטוס.</p></div>
+    <div class="grid g2">
+      <div class="ad">
+        <div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div>
+        <div class="mid"><div class="h">ז׳קטים מהודרים לילדים<br>לחתונות ולשמחות</div><div class="models"><span><i style="background:#141414"></i>קטיפה שחורה</span><span><i style="background:#EFE6D2"></i>שמנת</span></div><div style="font-size:14px">גילאי 1–13</div></div>
+        <div class="bot"><div class="price">30 ₪ <small>לז׳קט</small></div><div class="ph">052-7614312<small>בתיאום מראש</small></div></div>
+      </div>
+      <ul class="rules">
+        <li><span class="ok">✓</span>הלוגו תמיד בגרסה מהעמוד הזה. לא מותחים ולא משנים צבע.</li>
+        <li><span class="ok">✓</span>על רקע כחול כותבים באבן בהירה ובנחושת בהירה.</li>
+        <li><span class="ok">✓</span>משאירים סביב הלוגו רווח בגובה המילה ״גמ״ח״ לפחות.</li>
+        <li><span class="no">✕</span>לא מוסיפים צבעים מחוץ לפלטה.</li>
+        <li><span class="no">✕</span>לא מוסיפים צל, זוהר או הדגשה ללוגו.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>שלט כניסה</h2><p>מומלץ 60×40 ס״מ, על פח או פרספקס.</p></div>
+    <div class="sign">
+      <div class="mark"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div>
+      <div class="info"><span><b>052-7614312</b><br>בתיאום מראש</span><span><b>30 ₪</b><br>לז׳קט</span><span><b>גילאי 1–13</b><br>קטיפה שחורה · שמנת</span></div>
+    </div>
+  </section>
+</div>

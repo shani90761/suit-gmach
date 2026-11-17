@@ -1,0 +1,15 @@
+{% extends "gemach/base.html" %}{% block title %}הגדרות{% endblock %}
+{% block content %}
+<h1>הגדרות</h1><p class="sub">אפשר להשתמש בנוסחים במילים: {name} {lines} {total} {pickup} {return} {event} {phone}</p>
+<form method="post" class="grid">{% csrf_token %}
+<div class="card grid"><h2>כללי</h2><div class="row">
+  <label>טלפון הגמ״ח<input name="gemach_phone" value="{{ s.gemach_phone }}"></label>
+  <label>שעת שליחת תזכורות<select name="reminder_hour">{% for h in hours %}<option value="{{ h }}" {% if h == s.reminder_hour %}selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></label></div>
+  <label style="flex-direction:row;display:flex;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" name="same_day_turnover" value="1" {% if s.same_day_turnover %}checked{% endif %} style="width:auto"> ז׳קט שמוחזר ביום מסוים יכול לצאת ללקוח אחר באותו יום</label>
+</div>
+<div class="card grid"><h2>נוסחי המיילים</h2>
+{% for k, label, v in tpls %}<label>{{ label }}<textarea name="tpl_{{ k }}" rows="5">{{ v }}</textarea></label>{% endfor %}
+</div>
+<div><button class="btn copper">שמירה</button></div>
+</form>
+{% endblock %}

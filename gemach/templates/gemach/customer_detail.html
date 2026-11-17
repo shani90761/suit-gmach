@@ -1,0 +1,18 @@
+{% extends "gemach/base.html" %}{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<h1>{{ c.name }}</h1><p class="sub">{{ orders|length }} הזמנות</p>
+<div class="grid g2">
+<form class="card grid" method="post">{% csrf_token %}<input type="hidden" name="action" value="save"><h2>פרטים</h2>
+  <div class="row"><label>שם<input name="name" value="{{ c.name }}" required></label><label>טלפון<input name="phone" value="{{ c.phone }}" required></label></div>
+  <label>מייל<input name="email" type="email" value="{{ c.email }}"></label>
+  <label>הערות (רק את רואה)<textarea name="notes" rows="3">{{ c.notes }}</textarea></label>
+  <div><button class="btn">שמירה</button></div>
+</form>
+<div class="card"><h2>הזמנות</h2><table><tbody>
+{% for o in orders %}<tr><td><a href="{% url 'order_detail' o.pk %}">{{ o.event_date|date:"j.n.Y" }}</a></td><td>{{ o.live_lines|length }} ז׳קטים</td><td>{% include "gemach/_status.html" %}</td></tr>
+{% empty %}<tr><td class="empty">אין הזמנות.</td></tr>{% endfor %}</tbody></table>
+<a class="btn sm sec" style="margin-top:10px" href="{% url 'order_new' %}">+ הזמנה חדשה</a></div>
+</div>
+<details class="card" style="margin-top:16px"><summary>מחיקת הלקוח</summary>
+<form method="post" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="delete"><p class="hint">הלקוח וכל ההזמנות שלו יימחקו לצמיתות.</p><button class="btn danger">מחיקה לצמיתות</button></form></details>
+{% endblock %}

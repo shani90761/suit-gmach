@@ -1,0 +1,282 @@
+<title>עיון באפיון הגמ״ח</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;700&display=swap">
+<style>
+/* Layout: a single review column — sticky progress bar, then sections of approvable items; brand: stone + navy + copper */
+:root{
+  --bg:#F6F1E6; --panel:#FFFFFF; --fg:#1B2233; --muted:#6C6A64; --line:#E1D8C6;
+  --navy:#22304A; --copper:#A6743F; --stone:#E3D5BA; --sugg:#FBF6EA;
+  --ok:#2F6B45; --ok-bg:#E5F0E8; --no:#A2433A; --no-bg:#F7E6E3;
+  --display:"Frank Ruhl Libre","David Libre",Georgia,serif;
+  --body:"Heebo","Arial Hebrew",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#13161D;--panel:#1C2029;--fg:#ECE7DD;--muted:#A39E93;--line:#2F3441;--navy:#3A4E74;--copper:#C99A63;--stone:#3B3A35;--sugg:#232328;--ok:#7FC495;--ok-bg:#1E3326;--no:#E58A80;--no-bg:#3A2220;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13161D;--panel:#1C2029;--fg:#ECE7DD;--muted:#A39E93;--line:#2F3441;--navy:#3A4E74;--copper:#C99A63;--stone:#3B3A35;--sugg:#232328;--ok:#7FC495;--ok-bg:#1E3326;--no:#E58A80;--no-bg:#3A2220;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);direction:rtl;line-height:1.6;font-size:15px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--navy)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--navy);color:#F3ECDD}
+.top-in{max-width:860px;margin:0 auto;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:8px}
+.brandrow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.brand{font-family:var(--display);font-weight:900;font-size:20px}
+.brand small{font-family:var(--body);font-weight:400;font-size:13px;opacity:.8;margin-inline-start:8px}
+.save{font-size:12px;opacity:.85}
+.bar{height:6px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:#D7A86E;transition:width .3s}
+.stats{display:flex;gap:14px;font-size:13px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{font:inherit;font-size:13px;border:1px solid rgba(243,236,221,.4);background:transparent;color:inherit;border-radius:999px;padding:3px 12px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:#F3ECDD;color:#22304A;border-color:#F3ECDD;font-weight:700}
+main{max-width:860px;margin:0 auto;padding-block:20px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+.intro{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:grid;gap:6px}
+.intro h1{font-family:var(--display);font-size:24px;margin:0;color:var(--fg)}
+.intro p{margin:0;color:var(--muted)}
+.notice{background:var(--sugg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;font-size:14px}
+section{display:grid;gap:10px}
+h2{font-family:var(--display);font-size:20px;margin:0;padding-bottom:6px;border-bottom:2px solid var(--copper);color:var(--fg)}
+.lead{margin:0;color:var(--muted);font-size:14px}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:8px}
+.item.sugg{background:var(--sugg)}
+.item.st-yes{border-inline-start:4px solid var(--ok)}
+.item.st-no{border-inline-start:4px solid var(--no)}
+.row{display:flex;gap:12px;align-items:flex-start}
+.num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;min-width:24px;padding-top:2px}
+.txt{flex:1;min-width:0}
+.chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;padding:1px 8px;border-radius:999px;background:var(--stone);color:var(--fg);margin-inline-start:6px;vertical-align:2px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-inline-start:36px}
+.acts button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:4px 12px;cursor:pointer}
+.acts button:focus-visible,.filters button:focus-visible,textarea:focus-visible,.q button:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+.acts .yes[aria-pressed="true"]{background:var(--ok-bg);color:var(--ok);border-color:var(--ok);font-weight:700}
+.acts .no[aria-pressed="true"]{background:var(--no-bg);color:var(--no);border-color:var(--no);font-weight:700}
+.acts .cm{border-style:dashed;color:var(--muted)}
+textarea{width:100%;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--bg);color:var(--fg);resize:vertical;min-height:60px}
+.cwrap{padding-inline-start:36px}
+.q{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:grid;gap:8px}
+.q .qq{font-weight:700}
+.q .rec{font-size:13px;color:var(--muted)}
+.q .opts{display:flex;gap:6px;flex-wrap:wrap}
+.q button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:5px 14px;cursor:pointer}
+.q button[aria-pressed="true"]{background:var(--navy);color:#F3ECDD;border-color:var(--navy);font-weight:700}
+.msgs{width:100%;border-collapse:collapse;font-size:14px}
+.msgs td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
+.msgs td:last-child{color:var(--muted);white-space:nowrap}
+.tw{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px}
+.done{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:10px}
+.done button{justify-self:start;font:inherit;font-weight:700;background:var(--copper);color:#fff;border:0;border-radius:6px;padding:8px 18px;cursor:pointer}
+.empty{color:var(--muted);text-align:center;padding:20px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="top"><div class="top-in">
+  <div class="brandrow"><span class="brand">חליפות לשמחות<small>עיון באפיון המערכת</small></span><span class="save" id="save">טוען…</span></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="stats"><span id="s-done">0 מתוך 0 נבדקו</span><span>✓ <b id="s-yes">0</b></span><span>✕ <b id="s-no">0</b></span><span>הערות: <b id="s-cm">0</b></span></div>
+  <div class="filters" role="group" aria-label="סינון">
+    <button data-f="all" aria-pressed="true">הכל</button>
+    <button data-f="todo" aria-pressed="false">עוד לא עברתי</button>
+    <button data-f="sugg" aria-pressed="false">רק הצעות</button>
+    <button data-f="flag" aria-pressed="false">לא מאושר / עם הערה</button>
+  </div>
+</div></div>
+
+<main id="main">
+  <div class="intro">
+    <h1>שלום! כאן אפשר לעבור על המערכת שתוכננה לגמ״ח</h1>
+    <p><b>גרסה 2:</b> לפי בקשתך, אין אתר ללקוחות – הזמנות רק בטלפון, ואת מקלידה אותן.</p>
+    <p>ליד כל סעיף: <b>✓ מאשרת</b> או <b>✕ לא</b>, ואם יש מה להוסיף – <b>הערה</b>. הכל נשמר לבד.</p>
+    <p>סעיפים ברקע בהיר עם התווית <span class="chip">הצעה</span> הם רעיונות שלנו שלא נאמרו במפורש – כדאי לשים לב אליהם.</p>
+  </div>
+  <div class="notice" id="notice" hidden></div>
+  <div id="content"></div>
+</main>
+
+<script>
+const SECTIONS = [
+ {t:"מי משתמש במערכת", lead:"המערכת היא כלי עבודה שלך בלבד. לקוחות מתקשרים בטלפון, ואת מקלידה. אין אתר ללקוחות.", items:[
+  [1,"רק את נכנסת למערכת, עם סיסמה. אין שום דף שלקוחות רואים.",0],
+  [2,"המערכת מותאמת לעבודה מהמחשב.",1]]},
+ {t:"הז׳קטים", items:[
+  [3,"את מוסיפה ועורכת את הדגמים (שם, תיאור, תמונה).",0],
+  [4,"את מוסיפה כל ז׳קט: מספר תגית, דגם ומידה.",0],
+  [5,"אי אפשר לתת לשני ז׳קטים אותו מספר תגית.",1],
+  [6,"אפשר ״להשבית״ ז׳קט (למשל קרע בשרוול) – הוא לא יושאל עד שתחזירי אותו לפעיל.",0],
+  [7,"אם משביתים ז׳קט שכבר מוזמן לשמחה עתידית – תקבלי התרעה.",1]]},
+ {t:"בדיקת זמינות – תוך כדי שיחה", items:[
+  [8,"את מקלידה תאריך שמחה, ורואה מיד כמה ז׳קטים פנויים מכל דגם ומידה.",0],
+  [9,"ממסך הזמינות לוחצים ״הזמנה״ – והתאריך כבר ממולא.",1],
+  [10,"לוח זמינות: לכל דגם ומידה – כמה פנויים בכל תאריך קרוב.",1]]},
+ {t:"הזמנה", lead:"האיסוף תמיד יום לפני השמחה, וההחזרה יום אחרי.", items:[
+  [11,"בהזמנה: שם, טלפון, מייל (לא חובה), תאריך שמחה והערה.",0],
+  [12,"הזמנה אחת יכולה לכלול כמה ז׳קטים – שורה לכל ילד (דגם + מידה, ושם הילד אם רוצים).",0],
+  [13,"מספר הז׳קט עצמו נקבע באיסוף.",0],
+  [14,"אין הגבלה על זמן מראש, על כמות או על תאריכים.",0],
+  [15,"אם אין פנוי במידה מסוימת בתאריך – אי אפשר לשמור אותה.",0],
+  [16,"הזמנה שנשמרה – סגורה מיד ותופסת את הז׳קט. אין שלב אישור.",0],
+  [17,"מקלידים טלפון של לקוח שכבר היה – הפרטים מתמלאים לבד, ורואים הזמנות קודמות והערות.",0],
+  [17.5,"טלפון משותף (בני זוג, אחים): המערכת רק מציעה ״זה משה כהן?״ – אפשר לאשר או לבחור ״לקוח אחר עם אותו טלפון״, ושום דבר לא נדרס.",0],
+  [18,"שדה חופשי ״מדידה״ לרשום מתי סוכם שיבואו למדוד (בלי תורים ובלי תזכורת).",1],
+  [19,"אפשר לערוך הזמנה: לשנות תאריך, מידה, להוסיף או להסיר ילד.",0],
+  [20,"חיפוש הזמנה לפי שם או טלפון.",1]]},
+ {t:"איסוף, תשלום והחזרה", items:[
+  [21,"באיסוף את בוחרת מספר ז׳קט לכל שורה, מתוך הפנויים באותו דגם ומידה.",0],
+  [22,"המערכת מציגה כמה לשלם (30 ₪ × מספר הז׳קטים), ואת מסמנת ״שולם במזומן״.",0],
+  [23,"אפשר לסמן ״נאסף״ גם בלי תשלום – ואז ההזמנה מסומנת ״חוב״.",1],
+  [24,"לקוח שלא הגיע לאסוף – ההזמנה נשארת פתוחה עד שתבטלי.",0],
+  [25,"בהחזרה מסמנים ״הוחזר״ לכל ז׳קט, והוא פנוי מיד.",0],
+  [26,"ז׳קט שחזר פגום – מסמנים ״פגום״ עם הערה, והוא מושבת.",0],
+  [27,"ז׳קט שלא הוחזר עד סוף יום ההחזרה מסומן ״באיחור״.",0],
+  [28,"אם ז׳קט מאחר והוא כבר מוזמן לשמחה הבאה – תקבלי התרעה והצעה לז׳קט אחר באותה מידה.",1]]},
+ {t:"ביטולים", items:[
+  [29,"את מבטלת הזמנה בכל שלב לפני האיסוף, והז׳קטים מתפנים מיד.",0],
+  [30,"אפשר לבטל ז׳קט אחד מתוך הזמנה (ולא את כולה).",1]]},
+ {t:"מיילים ללקוח", lead:"נשלחים רק ללקוח שמסר מייל. אין הודעות קוליות. התזכורות יוצאות בשעה שאת קובעת.", msgs:true, items:[
+  [31,"אילו מיילים יוצאים ומתי – לפי הטבלה למעלה.",0],
+  [32,"את יכולה לערוך את הנוסח של כל מייל.",1],
+  [33,"בכל הזמנה רואים אילו מיילים נשלחו ואם נכשלו.",1],
+  [34,"אפשר לעצור תזכורות איחור ללקוח מסוים.",1],
+  [35,"בשינוי קטן אפשר לסמן ״לא לשלוח מייל״.",1]]},
+ {t:"המסך הראשי שלך", items:[
+  [36,"ז׳קטים באיחור ומושבתים – ראשונים ובולטים.",0],
+  [37,"איסופים והחזרות של היום ומחר.",0],
+  [38,"שדה בדיקת זמינות מהירה בראש המסך.",1],
+  [39,"כפתור ״הזמנה חדשה״ בולט.",1],
+  [40,"רשימת הזמנות עם חוב.",1]]},
+ {t:"מידע ושמירה", items:[
+  [41,"פרטי לקוחות והזמנות נשמרים תמיד. אפשר למחוק לקוח לפי בקשה.",0],
+  [42,"גיבוי אוטומטי כל יום.",1]]},
+ {t:"איך נדע שהמערכת הצליחה", items:[
+  [43,"אף ז׳קט לא ״נעלם״ – אין ז׳קט שנאסף ולא הוחזר יותר משבוע.",0],
+  [44,"פחות איחורים בהחזרה – בודקים את האחוז כל חודש.",0]]},
+];
+const MSGS=[["אישור הזמנה (ימי איסוף והחזרה, ז׳קטים, סכום)","מיד כששומרים"],["עדכון הזמנה (שינוי מידה / תאריך)","מיד"],["ביטול הזמנה","מיד"],["תזכורת לאיסוף","בבוקר יום האיסוף"],["תזכורת להחזרה","בבוקר יום ההחזרה"],["תזכורת איחור","כל יום עד ההחזרה"]];
+const QS=[
+ {id:"q2",q:"ז׳קט שמוחזר ביום מסוים – האם לקוח אחר יכול לאסוף אותו באותו יום?",rec:"ההמלצה שלנו: לא – בטוח יותר, ועם 30 ז׳קטים זה כנראה לא יחסר.",o:["כן","לא"]},
+ {id:"q7",q:"במקום המדד ״70% הזמנות דרך האתר״ (שכבר לא רלוונטי) – איך נמדוד הצלחה?",rec:"ההמלצה שלנו: אף פעם לא שתי הזמנות על אותו ז׳קט.",o:["אין הזמנות כפולות","שיחות קצרות יותר","לוותר"]},
+];
+const ALL = SECTIONS.flatMap(s=>s.items);
+const TOTAL = ALL.length + QS.length;
+
+let state = {};          // id -> {status, comment, answer}
+let filter = "all";
+let db = null, col = null, useLocal = false;
+const LKEY = "gemach-review-v2";
+const $ = s=>document.querySelector(s);
+
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function st(id){return state[id]||{}}
+
+function render(){
+  const out=[];
+  // questions
+  if(filter==="all"||filter==="todo"||filter==="flag"){
+    const qs = QS.filter(q=>filter==="all"||(filter==="todo"&&!st(q.id).answer)||(filter==="flag"&&st(q.id).comment));
+    if(qs.length){
+      out.push('<section><h2>2 שאלות שצריך עליהן תשובה</h2>');
+      qs.forEach(q=>{const s=st(q.id);
+        out.push(`<div class="q" data-id="${q.id}"><div class="qq">${esc(q.q)}</div><div class="rec">${esc(q.rec)}</div><div class="opts">${q.o.map(o=>`<button data-ans="${esc(o)}" aria-pressed="${s.answer===o}">${esc(o)}</button>`).join("")}</div>${cbox(q.id,s)}</div>`)});
+      out.push('</section>');
+    }
+  }
+  SECTIONS.forEach(sec=>{
+    const items = sec.items.filter(([n,,sg])=>{const s=st("i"+n);
+      if(filter==="todo") return !s.status; if(filter==="sugg") return sg; if(filter==="flag") return s.status==="no"||(s.comment||"").trim(); return true;});
+    if(!items.length) return;
+    out.push(`<section><h2>${esc(sec.t)}</h2>`);
+    if(sec.lead) out.push(`<p class="lead">${esc(sec.lead)}</p>`);
+    if(sec.msgs && filter!=="sugg") out.push(`<div class="tw"><table class="msgs"><tbody>${MSGS.map(m=>`<tr><td>${esc(m[0])}</td><td>${esc(m[1])}</td></tr>`).join("")}</tbody></table></div>`);
+    items.forEach(([n,t,sg])=>{const id="i"+n,s=st(id);
+      out.push(`<div class="item ${sg?"sugg":""} ${s.status?"st-"+s.status:""}" data-id="${id}"><div class="row"><span class="num">${String(n).replace('.5','א')}</span><div class="txt">${esc(t)}${sg?'<span class="chip">הצעה</span>':""}</div></div>
+      <div class="acts"><button class="yes" aria-pressed="${s.status==="yes"}">✓ מאשרת</button><button class="no" aria-pressed="${s.status==="no"}">✕ לא</button>${(s.comment||s._open)?"":'<button class="cm">+ הערה</button>'}</div>${(s.comment||s._open)?cbox(id,s):""}</div>`)});
+    out.push('</section>');
+  });
+  if(filter==="all"){
+    const g=st("general");
+    out.push(`<section><h2>הערות כלליות</h2><p class="lead">משהו חסר, לא ברור, או שהיית רוצה אחרת?</p><textarea id="c-general" data-id="general" aria-label="הערות כלליות" rows="5">${esc(g.comment||"")}</textarea></section>`);
+    out.push(`<div class="done"><b>סיימת?</b><span class="lead">הכל כבר שמור${useLocal?" במכשיר הזה בלבד – לחצי כדי להעתיק סיכום ולשלוח אותו בוואטסאפ או במייל.":". אפשר גם להעתיק סיכום של הסעיפים שלא אושרו ושל ההערות."}</span><button id="copy">העתקת סיכום</button><span class="lead" id="copied" hidden></span></div>`);
+  }
+  if(!out.length) out.push('<p class="empty">אין סעיפים בסינון הזה.</p>');
+  $("#content").innerHTML=out.join("");
+  stats();
+}
+function cbox(id,s){return `<div class="cwrap"><textarea id="c-${id}" data-id="${id}" aria-label="הערה" rows="2" placeholder="כתבי כאן הערה…">${esc(s.comment||"")}</textarea></div>`}
+
+function stats(){
+  let done=0,yes=0,no=0,cm=0;
+  ALL.forEach(([n])=>{const s=st("i"+n); if(s.status){done++; s.status==="yes"?yes++:no++;} if((s.comment||"").trim())cm++;});
+  QS.forEach(q=>{const s=st(q.id); if(s.answer)done++; if((s.comment||"").trim())cm++;});
+  if((st("general").comment||"").trim())cm++;
+  $("#s-done").textContent=`${done} מתוך ${TOTAL} נבדקו`; $("#s-yes").textContent=yes; $("#s-no").textContent=no; $("#s-cm").textContent=cm;
+  $("#bar").style.width=(done/TOTAL*100)+"%";
+}
+
+function setSave(t){$("#save").textContent=t}
+const timers={};
+function persist(id){
+  const s={...st(id)}; delete s._open; s.at=Date.now();
+  if(useLocal){ try{const all={};Object.keys(state).forEach(k=>{const v={...state[k]};delete v._open;all[k]=v});localStorage.setItem(LKEY,JSON.stringify(all))}catch(e){} setSave("נשמר במכשיר"); return; }
+  setSave("שומר…");
+  col.doc(id).set(s).then(()=>setSave("נשמר ✓")).catch(e=>{setSave("לא נשמר – "+(e&&e.code==="permission_denied"?"אין הרשאת עריכה":"נסי שוב"));});
+}
+function update(id,patch,rerender=true){state[id]={...st(id),...patch}; if(rerender)render(); else stats();
+  clearTimeout(timers[id]); timers[id]=setTimeout(()=>persist(id), patch.comment!==undefined?700:0);}
+
+document.addEventListener("click",e=>{
+  const f=e.target.closest(".filters button");
+  if(f){filter=f.dataset.f; document.querySelectorAll(".filters button").forEach(b=>b.setAttribute("aria-pressed",b===f)); render(); window.scrollTo({top:0}); return;}
+  const it=e.target.closest("[data-id]"); if(!it) return; const id=it.dataset.id;
+  if(e.target.closest(".yes")) update(id,{status:st(id).status==="yes"?"":"yes"});
+  else if(e.target.closest(".no")){ update(id,{status:st(id).status==="no"?"":"no",_open:true}); setTimeout(()=>{const t=document.getElementById("c-"+id); t&&t.focus()},0); }
+  else if(e.target.closest(".cm")){ state[id]={...st(id),_open:true}; render(); setTimeout(()=>{const t=document.getElementById("c-"+id); t&&t.focus()},0); }
+  else if(e.target.dataset.ans) update(id,{answer:st(id).answer===e.target.dataset.ans?"":e.target.dataset.ans});
+  if(e.target.id==="copy") copySummary();
+});
+document.addEventListener("input",e=>{ if(e.target.tagName==="TEXTAREA") update(e.target.dataset.id,{comment:e.target.value},false); });
+
+function summary(){
+  const L=["עיון באפיון (גרסה 2) – גמ״ח חליפות לשמחות",""];
+  QS.forEach((q,i)=>{const s=st(q.id); L.push(`שאלה ${i+1}: ${s.answer||"לא נענתה"}${s.comment?" – "+s.comment:""}`)});
+  L.push("");
+  const no=[],cm=[];
+  ALL.forEach(([n,t])=>{const s=st("i"+n); if(s.status==="no") no.push(`${n}. ${t}${s.comment?"\n   הערה: "+s.comment:""}`); else if((s.comment||"").trim()) cm.push(`${n}. ${t}\n   הערה: ${s.comment}`);});
+  const todo=ALL.filter(([n])=>!st("i"+n).status).map(([n])=>n);
+  L.push(`לא מאושר (${no.length}):`, ...(no.length?no:["אין"]), "", `הערות על סעיפים מאושרים (${cm.length}):`, ...(cm.length?cm:["אין"]));
+  if(todo.length) L.push("", "סעיפים שלא סומנו: "+todo.join(", "));
+  if((st("general").comment||"").trim()) L.push("", "הערות כלליות:", st("general").comment);
+  return L.join("\n");
+}
+function copySummary(){
+  const text=summary(), msg=$("#copied");
+  const fallback=()=>{msg.hidden=false; msg.innerHTML='לא הצלחתי להעתיק אוטומטית – סמני את הטקסט והעתיקי:<br><textarea rows="8" readonly id="sumbox">'+esc(text)+'</textarea>'; const b=document.getElementById("sumbox"); b.focus(); b.select();};
+  try{ navigator.clipboard.writeText(text).then(()=>{msg.hidden=false; msg.textContent="הועתק! אפשר להדביק בוואטסאפ או במייל.";}, fallback);}catch(e){fallback()}
+}
+
+function goLocal(reason){
+  useLocal=true;
+  try{state=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){state={}}
+  const n=$("#notice"); n.hidden=false; n.textContent=reason; setSave("שמירה במכשיר"); render();
+}
+
+render();
+(async()=>{
+  const timer=setTimeout(()=>{ if(!db) goLocal("ההערות נשמרות במכשיר הזה בלבד. בסיום לחצי ״העתקת סיכום״ ושלחי.") },10000);
+  try{
+    const c = window.claude && window.claude.use ? window.claude : null;
+    db = c ? await c.use("db") : null;
+  }catch(e){db=null}
+  if(!db){ clearTimeout(timer); goLocal("ההערות נשמרות במכשיר הזה בלבד. בסיום לחצי ״העתקת סיכום״ ושלחי."); return; }
+  col = db.collection("review2");
+  let first=true;
+  col.onSnapshot(snap=>{
+    clearTimeout(timer);
+    if(useLocal) return;
+    const next={};
+    snap.docs.forEach(d=>{ next[d.id]={...(d.data()||{})}; });
+    // keep local open/editing flags and unsaved comment text in the focused box
+    const active=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.id;
+    Object.keys(state).forEach(k=>{ if(state[k]._open) next[k]={...(next[k]||{}),_open:true}; if(k===active) next[k]={...(next[k]||{}),comment:state[k].comment}; });
+    state=next;
+    if(first||!active){ render(); } else stats();
+    if(first){ setSave("נשמר ✓ · משותף"); first=false; }
+  }, err=>{ goLocal("לא ניתן לשמור בשרת כרגע. ההערות נשמרות במכשיר הזה – בסיום לחצי ״העתקת סיכום״ ושלחי."); });
+})();
+</script>

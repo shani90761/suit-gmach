@@ -1,0 +1,30 @@
+{% load static %}<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}ניהול{% endblock %} · חליפות לשמחות</title>
+<link rel="icon" href="data:,"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="{% static 'gemach/app.css' %}">
+</head><body>
+<div class="layout">
+<aside class="side">
+  <div class="logo"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div>
+  {% with u=request.resolver_match.url_name %}
+  <nav class="nav">
+    <a class="new" href="{% url 'order_new' %}">+ הזמנה חדשה</a>
+    <a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">מסך ראשי</a>
+    <a href="{% url 'availability' %}" class="{% if u == 'availability' %}on{% endif %}">בדיקת זמינות</a>
+    <a href="{% url 'board' %}" class="{% if u == 'board' %}on{% endif %}">לוח זמינות</a>
+    <a href="{% url 'orders' %}" class="{% if u == 'orders' or u == 'order_detail' or u == 'order_edit' %}on{% endif %}">הזמנות</a>
+    <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_detail' %}on{% endif %}">לקוחות</a>
+    <a href="{% url 'inventory' %}" class="{% if u == 'inventory' %}on{% endif %}">ז׳קטים ודגמים</a>
+    <a href="{% url 'settings' %}" class="{% if u == 'settings' %}on{% endif %}">הגדרות</a>
+  </nav>
+  {% endwith %}
+  <div class="foot"><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>יציאה</button></form></div>
+</aside>
+<main class="main">
+  {% if messages %}<div class="msgs">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+</div>
+{% block scripts %}{% endblock %}
+</body></html>

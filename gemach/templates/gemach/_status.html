@@ -1,0 +1,1 @@
+{% if o.is_late %}<span class="chip bad">באיחור</span>{% elif o.status == 'booked' %}<span class="chip">הוזמנה</span>{% elif o.status == 'picked' %}<span class="chip warn">נאספה</span>{% elif o.status == 'returned' %}<span class="chip ok">הוחזרה</span>{% else %}<span class="chip muted">בוטלה</span>{% endif %}{% if o.has_debt %} <span class="chip bad">חוב</span>{% endif %}
