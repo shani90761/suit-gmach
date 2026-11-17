@@ -1,4 +1,4 @@
-{% extends "gemach/base.html" %}{% block title %}{{ c.name }}{% endblock %}
+{% extends "gemach/base.html" %}{% load gemach_ui %}{% block title %}{{ c.name }}{% endblock %}
 {% block heading %}{{ c.name }}{% endblock %}
 {% block content %}
 <p class="sub">{{ orders|length }} הזמנות</p>
@@ -10,7 +10,7 @@
   <div><button class="btn">שמירה</button></div>
 </form>
 <div class="card"><h2>הזמנות</h2><table><tbody>
-{% for o in orders %}<tr><td><a href="{% url 'order_detail' o.pk %}">{{ o.event_date|date:"j.n.Y" }}</a></td><td>{{ o.live_lines|length }} ז׳קטים</td><td>{% include "gemach/_status.html" %}</td></tr>
+{% for o in orders %}<tr><td><a href="{% url 'order_detail' o.pk %}">{{ o.event_date|hd:"long" }}</a></td><td>{{ o.live_lines|length }} ז׳קטים</td><td>{% include "gemach/_status.html" %}</td></tr>
 {% empty %}<tr><td class="empty">אין הזמנות.</td></tr>{% endfor %}</tbody></table>
 <a class="btn sm sec" style="margin-top:10px" href="{% url 'order_new' %}">+ הזמנה חדשה</a></div>
 </div>

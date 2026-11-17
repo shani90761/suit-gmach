@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 from django.conf import settings as conf
 from django.contrib import messages
@@ -73,6 +74,33 @@ def customer_search(request):
         out.append({"id": c.id, "name": c.name, "phone": c.phone, "orders": len(orders),
                     "next": f"{nxt:%d.%m}" if nxt else "", "late": any(o.is_late for o in orders)})
     return JsonResponse({"customers": out})
+
+
+def calendar_view(request):
+    return render(request, "gemach/calendar.html", {"start": request.GET.get("d", "")})
+
+
+def calendar_api(request):
+    """אירועי היומן בטווח תאריכים: איסוף, שמחה, החזרה."""
+    a, b = parse_date(request.GET.get("from")), parse_date(request.GET.get("to"))
+    if not a or not b or (b - a).days > 120:
+        return JsonResponse({"error": "range"}, status=400)
+    qs = (Order.objects.exclude(status=Order.CANCELLED)
+          .filter(event_date__gte=a - dt.timedelta(days=1), event_date__lte=b + dt.timedelta(days=1))
+          .select_related("customer").prefetch_related("lines__model", "lines__jacket"))
+    out = []
+    for o in qs:
+        lines = o.live_lines
+        jackets = ", ".join(f"{l.model.name} {l.size}" + (f" #{l.jacket.tag}" if l.jacket else "") for l in lines)
+        base = {"order": o.id, "name": o.customer.name, "n": len(lines), "jackets": jackets}
+        late = o.is_late
+        for kind, day, done in (("out", o.pickup_date, o.status in (Order.PICKED, Order.RETURNED)),
+                                ("event", o.event_date, False),
+                                ("in", o.return_date, o.status == Order.RETURNED)):
+            if a <= day <= b:
+                out.append({**base, "kind": kind, "date": day.isoformat(), "done": done,
+                            "late": late and kind == "in"})
+    return JsonResponse({"events": out, "today": today().isoformat()})
 
 
 def availability_api(request):
@@ -325,12 +353,14 @@ def inventory(request):
         a = request.POST.get("action")
         if a == "add_jacket":
             try:
-                tag = int(request.POST["tag"])
+                tag = request.POST["tag"].strip().upper()
                 mdl = get_object_or_404(JacketModel, pk=request.POST["model"])
                 size = request.POST["size"].strip()
-                if not size:
+                if not size or not tag:
                     raise ValueError
-                if Jacket.objects.filter(tag=tag).exists():
+                if not re.fullmatch(r"[A-Z0-9-]{1,10}", tag):
+                    messages.error(request, "מספר תגית: אותיות באנגלית ומספרים בלבד, למשל A12.")
+                elif Jacket.objects.filter(tag=tag).exists():
                     messages.error(request, f"מספר תגית {tag} כבר קיים.")  # REQ-INV-4
                 else:
                     Jacket.objects.create(tag=tag, model=mdl, size=size)
@@ -369,10 +399,10 @@ def inventory(request):
                 m.save()
                 messages.success(request, f"הדגם {m.name} נשמר.")
         return redirect("inventory")
-    jackets = Jacket.objects.select_related("model")
+    from .models import tag_key
+    jackets = sorted(Jacket.objects.select_related("model"), key=lambda j: tag_key(j.tag))
     return render(request, "gemach/inventory.html", {
         "models": JacketModel.objects.all(), "jackets": jackets, "sizes": S.all_sizes(),
-        "next_tag": (max([j.tag for j in jackets] or [0]) + 1),
     })
 
 

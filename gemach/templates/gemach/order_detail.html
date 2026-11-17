@@ -1,5 +1,5 @@
 {% extends "gemach/base.html" %}{% load gemach_ui %}{% block title %}הזמנה {{ order.pk }}{% endblock %}
-{% block heading %}{{ order.customer.name }} · שמחה ביום {{ order.event_date|date:"l" }}, {{ order.event_date|date:"j.n.Y" }}{% endblock %}
+{% block heading %}{{ order.customer.name }} · שמחה {{ order.event_date|hd:"weekday" }}{% endblock %}
 {% block content %}
 <div class="head"><div><p class="sub" style="margin:0">הזמנה {{ order.pk }} · {% include "gemach/_status.html" with o=order %}</p></div>
 <div class="actions">{% if order.status == 'booked' %}<a class="btn sec" href="{% url 'order_edit' order.pk %}">עריכה</a><button type="button" class="btn" data-open="dlg-out-{{ order.pk }}">איסוף</button>{% elif order.status == 'picked' %}<button type="button" class="btn" data-open="dlg-in-{{ order.pk }}">החזרה</button>{% endif %}</div></div>
@@ -9,8 +9,8 @@
   <dt>לקוח</dt><dd><a href="{% url 'customer_detail' order.customer.pk %}">{{ order.customer.name }}</a></dd>
   <dt>טלפון</dt><dd class="num"><bdi dir="ltr">{{ order.customer.phone|phone }}</bdi></dd>
   <dt>מייל</dt><dd>{{ order.customer.email|default:"—" }}</dd>
-  <dt>איסוף</dt><dd>{{ order.pickup_date|date:"l" }}, {{ order.pickup_date|date:"j.n" }}</dd>
-  <dt>החזרה</dt><dd>{{ order.return_date|date:"l" }}, {{ order.return_date|date:"j.n" }}</dd>
+  <dt>איסוף</dt><dd>{{ order.pickup_date|hd:"weekday" }}</dd>
+  <dt>החזרה</dt><dd>{{ order.return_date|hd:"weekday" }}</dd>
   <dt>לתשלום</dt><dd class="num"><b>{{ order.total }} ₪</b> {% if order.paid %}<span class="chip ok">שולם</span>{% endif %}</dd>
   {% if order.fitting_note %}<dt>מדידה</dt><dd>{{ order.fitting_note }}</dd>{% endif %}
   {% if order.note %}<dt>הערה</dt><dd>{{ order.note }}</dd>{% endif %}

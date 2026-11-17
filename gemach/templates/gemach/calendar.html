@@ -1,0 +1,35 @@
+{% extends "gemach/base.html" %}{% block title %}יומן{% endblock %}
+{% block heading %}יומן{% endblock %}
+{% block content %}
+<div class="cal-head">
+  <div class="actions"><button type="button" class="btn sm sec" id="cprev">› חודש קודם</button><b id="ctitle" class="cal-title"></b><button type="button" class="btn sm sec" id="cnext">חודש הבא ‹</button><button type="button" class="btn sm ghost" id="ctoday">היום</button></div>
+  <div class="legend"><span><i class="lg out"></i>איסוף</span><span><i class="lg event"></i>שמחה</span><span><i class="lg in"></i>החזרה</span><span><i class="lg late"></i>באיחור</span><span><i class="lg done"></i>בוצע</span></div>
+</div>
+<div class="panel cal" id="cal" data-start="{{ start }}"><div class="empty">טוען…</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const H=window.HebDate, cal=document.getElementById('cal'), U="{% url 'calendar_api' %}";
+  const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const KIND={out:'איסוף',event:'שמחה',in:'החזרה'};
+  let cur=cal.dataset.start?H.toDate(cal.dataset.start):H.toDate(H.iso(new Date(Date.now()-new Date().getTimezoneOffset()*6e4)));
+  async function draw(){
+    const days=H.monthDays(cur), from=H.iso(days[0]), to=H.iso(days[days.length-1]);
+    document.getElementById('ctitle').innerHTML=`${H.monthTitle(days[0])} <small class="greg">${H.greg(from)} – ${H.greg(to)}</small>`;
+    let data; try{data=await (await fetch(`${U}?from=${from}&to=${to}`)).json()}catch(e){cal.innerHTML='<div class="empty">לא ניתן לטעון את היומן.</div>';return}
+    const by={}; data.events.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));
+    const order={out:0,event:1,in:2};
+    const lead=days[0].getUTCDay();
+    cal.innerHTML=`<div class="cal-g">${H.DAYS.map(d=>`<div class="cal-w">${d}</div>`).join('')}${'<div class="cal-c pad"></div>'.repeat(lead)}${days.map(d=>{
+      const s=H.iso(d), ev=(by[s]||[]).sort((a,b)=>order[a.kind]-order[b.kind]);
+      return `<div class="cal-c${s===data.today?' today':''}${d.getUTCDay()===6?' sh':''}"><div class="cal-n"><b>${H.gematria(H.parts(d).day)}</b><small>${H.greg(s)}</small></div>
+        ${ev.map(e=>`<a class="ev ${e.kind}${e.done?' done':''}${e.late?' late':''}" href="/orders/${e.order}/" title="${esc(KIND[e.kind]+': '+e.name+' · '+e.jackets)}">${e.done?'✓ ':''}${KIND[e.kind]} · ${esc(e.name)}${e.n>1?' ('+e.n+')':''}</a>`).join('')}</div>`}).join('')}</div>`;
+  }
+  document.getElementById('cprev').onclick=()=>{cur=H.addDays(H.monthDays(cur)[0],-1);draw()};
+  document.getElementById('cnext').onclick=()=>{const d=H.monthDays(cur);cur=H.addDays(d[d.length-1],1);draw()};
+  document.getElementById('ctoday').onclick=()=>{cur=H.toDate(H.iso(new Date(Date.now()-new Date().getTimezoneOffset()*6e4)));draw()};
+  draw();
+})();
+</script>
+{% endblock %}

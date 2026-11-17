@@ -1,5 +1,5 @@
 {% extends "gemach/base.html" %}{% load gemach_ui %}{% block title %}מסך ראשי{% endblock %}
-{% block heading %}מסך ראשי<span class="date">{{ today|date:"l" }}, {{ today|date:"j.n" }}</span>{% endblock %}
+{% block heading %}מסך ראשי<span class="date">{{ today|hd:"weekday" }}</span>{% endblock %}
 {% block content %}
 <section class="kpis" aria-label="סיכום">
   <div class="kpi"><span class="v">{{ k_out }}</span><span class="l">איסופים היום</span></div>
@@ -10,11 +10,11 @@
 
 {% if late or shortages or disabled or debts %}
 <section class="bars" aria-label="דורש טיפול">
-  {% for o in late %}<div class="bar red"><span class="dot"></span><span class="t"><b>באיחור:</b> {{ o.customer.name }} · <bdi dir="ltr">{{ o.customer.phone|phone }}</bdi> · ז׳קט {% for l in o.live_lines %}{% if not l.returned %}{{ l.jacket.tag }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %} · היה צריך לחזור ב־{{ o.return_date|date:"j.n" }}</span><a class="act" href="{% url 'order_detail' o.pk %}">רישום החזרה</a></div>{% endfor %}
-  {% for s in shortages %}<div class="bar red"><span class="dot"></span><span class="t"><b>חסר ז׳קט:</b> {{ s.order.customer.name }}, {{ s.order.event_date|date:"j.n" }} · {{ s.errors|join:"; " }}</span><a class="act" href="{% url 'order_detail' s.order.pk %}">לפתוח הזמנה</a></div>{% endfor %}
+  {% for o in late %}<div class="bar red"><span class="dot"></span><span class="t"><b>באיחור:</b> {{ o.customer.name }} · <bdi dir="ltr">{{ o.customer.phone|phone }}</bdi> · ז׳קט {% for l in o.live_lines %}{% if not l.returned %}{{ l.jacket.tag }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %} · היה צריך לחזור ב־{{ o.return_date|hd }}</span><a class="act" href="{% url 'order_detail' o.pk %}">רישום החזרה</a></div>{% endfor %}
+  {% for s in shortages %}<div class="bar red"><span class="dot"></span><span class="t"><b>חסר ז׳קט:</b> {{ s.order.customer.name }}, {{ s.order.event_date|hd }} · {{ s.errors|join:"; " }}</span><a class="act" href="{% url 'order_detail' s.order.pk %}">לפתוח הזמנה</a></div>{% endfor %}
   {% for j in disabled %}<div class="bar amber"><span class="dot"></span><span class="t"><b>מושבת:</b> ז׳קט {{ j.tag }} · {{ j.model.name }} {{ j.size }}{% if j.disabled_note %} · {{ j.disabled_note }}{% endif %}</span>
     <form method="post" action="{% url 'inventory' %}">{% csrf_token %}<input type="hidden" name="jacket" value="{{ j.id }}"><input type="hidden" name="next" value="{{ request.path }}"><button class="act" name="action" value="enable">החזרה לפעיל</button></form></div>{% endfor %}
-  {% for o in debts %}<div class="bar amber"><span class="dot"></span><span class="t"><b>חוב:</b> {{ o.customer.name }} · {{ o.total }} ₪ · שמחה {{ o.event_date|date:"j.n" }}</span>
+  {% for o in debts %}<div class="bar amber"><span class="dot"></span><span class="t"><b>חוב:</b> {{ o.customer.name }} · {{ o.total }} ₪ · שמחה {{ o.event_date|hd }}</span>
     <form method="post" action="{% url 'order_action' o.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="act" name="action" value="paid">סימון ששולם</button></form></div>{% endfor %}
 </section>
 {% endif %}

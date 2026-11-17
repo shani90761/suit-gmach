@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 
-from .models import EmailLog, Jacket, JacketModel, Order, OrderLine, Settings, today
+from .models import EmailLog, Jacket, JacketModel, Order, OrderLine, Settings, tag_key, today
 
 log = logging.getLogger(__name__)
 OPEN = (Order.BOOKED, Order.PICKED)
@@ -100,8 +100,8 @@ def shortages(days_ahead=120):
 def free_jackets_for(line):
     """ז'קטים שאפשר לשבץ לשורה באיסוף (REQ-PU-1)."""
     taken = {l.jacket_id for l in occupying_lines(line.order.event_date, exclude_order=line.order) if l.jacket_id}
-    return list(Jacket.objects.filter(model=line.model, size=line.size, active=True)
-                .exclude(id__in=taken).order_by("tag"))
+    return sorted(Jacket.objects.filter(model=line.model, size=line.size, active=True).exclude(id__in=taken),
+                  key=lambda j: tag_key(j.tag))
 
 
 # ---------- איסוף / החזרה / ביטול ----------

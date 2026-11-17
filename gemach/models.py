@@ -59,9 +59,15 @@ class JacketModel(models.Model):
         return self.name
 
 
+def tag_key(tag):
+    """מיון טבעי של תגיות: A2 לפני A10."""
+    import re
+    return [(0, int(p)) if p.isdigit() else (1, p) for p in re.findall(r"\d+|\D+", str(tag))]
+
+
 class Jacket(models.Model):
     """ז'קט פיזי עם מספר תגית. REQ-INV-3..5."""
-    tag = models.PositiveIntegerField("מספר תגית", unique=True)  # REQ-INV-4
+    tag = models.CharField("מספר תגית", max_length=10, unique=True)  # REQ-INV-4 — אותיות באנגלית ומספרים, למשל A12
     model = models.ForeignKey(JacketModel, on_delete=models.PROTECT, related_name="jackets", verbose_name="דגם")
     size = models.CharField("מידה", max_length=10)
     active = models.BooleanField("פעיל", default=True)
@@ -72,6 +78,10 @@ class Jacket(models.Model):
 
     def __str__(self):
         return f"{self.tag} · {self.model} · {self.size}"
+
+    def save(self, *a, **kw):
+        self.tag = str(self.tag).strip().upper()
+        super().save(*a, **kw)
 
 
 class Customer(models.Model):

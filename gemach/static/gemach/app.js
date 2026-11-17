@@ -6,8 +6,9 @@
   const fmtP = (p) => String(p).replace(/^(\d{3})(\d{3})(\d{4})$/, "$1-$2-$3");
   const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   const pd = (s) => new Date(s + "T12:00");
-  const dm = (s) => { const d = pd(s); return `${d.getDate()}.${d.getMonth() + 1}`; };
-  const dn = (s) => "יום " + DAYS[pd(s).getDay()];
+  const HD = window.HebDate;
+  const dm = (s) => HD ? `${HD.short(s)} <small class="greg">${HD.greg(s)}</small>` : (() => { const d = pd(s); return `${d.getDate()}.${d.getMonth() + 1}`; })();
+  const dn = (s) => "יום " + DAYS[pd(s).getDay()] + ",";
   const swatch = (n) => (n.includes("שחור") ? "#1b1b1b" : n.includes("שמנת") ? "#EFE6D2" : "#c9c4b8");
 
   // ---------- dialogs ----------
@@ -114,7 +115,7 @@
     }
     if (W.step === 2) {
       const ms = W.avail?.models || [];
-      wb.innerHTML = (ms.length ? `<div class="hint">לחיצה על מידה מוסיפה ילד · המספר = כמה פנויים לשמחה ב־${dm(W.date)}</div>
+      wb.innerHTML = (ms.length ? `<div class="hint">לחיצה על מידה מוסיפה ילד · המספר = כמה פנויים לשמחה ב־${HD ? HD.short(W.date) : W.date}</div>
         <div class="sizes">${ms.map((m) => `<div class="srow"><span class="m"><i class="sw" style="background:${swatch(m.name)}"></i>${esc(m.name)}</span><div class="tiles">${m.sizes.map((s) => {
           const left = free(m.id, s.size);
           return `<button type="button" class="tile" ${left <= 0 ? "disabled" : ""} data-m="${m.id}" data-s="${esc(s.size)}"><b>${esc(s.size)}</b><small>${left > 0 ? left + " פנויים" : "אין"}</small></button>`;
@@ -130,7 +131,8 @@
       wb.innerHTML = `<div class="sumbox">
         <div class="r"><span>לקוח</span><b>${esc(W.cust ? W.cust.name : W.name)} · <bdi dir="ltr">${fmtP(W.phone.replace(/\D/g, ""))}</bdi></b></div>
         <div class="r"><span>שמחה</span><b>${dn(W.date)} ${dm(W.date)}</b></div>
-        <div class="r"><span>איסוף / החזרה</span><span>${dm(W.avail.pickup)} / ${dm(W.avail.return)}</span></div>
+        <div class="r"><span>איסוף</span><span>${dn(W.avail.pickup)} ${dm(W.avail.pickup)}</span></div>
+        <div class="r"><span>החזרה</span><span>${dn(W.avail.return)} ${dm(W.avail.return)}</span></div>
         ${W.lines.map((l) => `<div class="r"><span>${esc(ms.find((x) => x.id === l.m).name)} ${esc(l.s)}</span><span>${esc(l.k) || "—"}</span></div>`).join("")}
         <div class="r" style="border-top:1px solid var(--line);padding-top:6px"><span>לתשלום באיסוף</span><span class="tot">${30 * W.lines.length} ₪</span></div></div>
         <label>מדידה (מה סוכם)<input id="wf" value="${esc(W.fitting)}" placeholder="למשל: יום ב׳ בערב"></label>

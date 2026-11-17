@@ -226,3 +226,28 @@ class SetupTests(TestCase):
         self.client.logout()
         self.assertEqual(self.client.get("/setup/")["Location"], "/login/")
         self.assertTrue(self.client.get("/")["Location"].startswith("/login/"))
+
+
+class CalendarAndTagTests(TestCase):
+    def setUp(self):
+        self.m = JacketModel.objects.get(name="שמנת")
+        self.client.force_login(get_user_model().objects.create_user("admin", "", "pass-12345"))
+
+    def test_calendar_events(self):
+        Jacket.objects.create(tag="B1", model=self.m, size="4")
+        c = Customer.objects.create(name="לוי", phone="0527000002")
+        mk_order(c, dt.date(2030, 3, 10), ["4"], self.m)
+        ev = self.client.get("/api/calendar/?from=2030-03-01&to=2030-03-31").json()["events"]
+        self.assertEqual(sorted((e["kind"], e["date"]) for e in ev),
+                         [("event", "2030-03-10"), ("in", "2030-03-11"), ("out", "2030-03-09")])
+        self.assertEqual(self.client.get("/api/calendar/?from=2030-01-01&to=2030-12-31").status_code, 400)
+
+    def test_tag_letters_uppercase_and_validated(self):
+        self.client.post("/inventory/", {"action": "add_jacket", "tag": "a12", "model": self.m.id, "size": "4"})
+        self.assertTrue(Jacket.objects.filter(tag="A12").exists())
+        self.client.post("/inventory/", {"action": "add_jacket", "tag": "א1", "model": self.m.id, "size": "4"})
+        self.assertEqual(Jacket.objects.count(), 1)
+
+    def test_natural_tag_order(self):
+        from .models import tag_key
+        self.assertEqual(sorted(["A10", "A2", "B1", "A1"], key=tag_key), ["A1", "A2", "A10", "B1"])

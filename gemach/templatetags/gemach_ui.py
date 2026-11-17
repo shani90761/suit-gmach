@@ -18,3 +18,12 @@ def swatch(model_name):
 def phone(p):
     p = str(p or "")
     return f"{p[:3]}-{p[3:6]}-{p[6:]}" if len(p) == 10 and p.isdigit() else p
+
+
+@register.filter
+def hd(d, fmt="short"):
+    """תאריך עברי (מוצג בדפדפן). fmt: short / long / weekday / day."""
+    from django.utils.html import format_html
+    if not d:
+        return ""
+    return format_html('<span class="hd" data-hd="{}" data-hd-fmt="{}">{}</span>', d.isoformat(), fmt, f"{d:%d.%m}")
