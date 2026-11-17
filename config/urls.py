@@ -5,6 +5,7 @@ from gemach import views as v
 
 urlpatterns = [
     path("login/", auth_views.LoginView.as_view(template_name="gemach/login.html"), name="login"),
+    path("setup/", v.first_setup, name="first_setup"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("", v.dashboard, name="dashboard"),
     path("availability/", v.availability, name="availability"),

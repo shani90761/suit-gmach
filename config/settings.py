@@ -81,7 +81,10 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # חודש — לא צריך להתחבר כל יום
 
-if not DEBUG:
+# LOCAL_APP=1 — התקנה מקומית על מחשב (http://127.0.0.1), בלי HTTPS
+LOCAL_APP = os.environ.get("LOCAL_APP") == "1"
+
+if not DEBUG and not LOCAL_APP:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

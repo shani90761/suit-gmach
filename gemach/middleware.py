@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 
-PUBLIC = ("/login/", "/cron/", "/static/", "/healthz")
+PUBLIC = ("/login/", "/setup/", "/cron/", "/static/", "/healthz")
 
 
 class LoginRequiredMiddleware:
@@ -11,5 +11,8 @@ class LoginRequiredMiddleware:
 
     def __call__(self, request):
         if not request.user.is_authenticated and not request.path.startswith(PUBLIC):
+            from django.contrib.auth import get_user_model
+            if not get_user_model().objects.exists():
+                return redirect("/setup/")  # התקנה חדשה
             return redirect(f"/login/?next={request.path}")
         return self.get_response(request)

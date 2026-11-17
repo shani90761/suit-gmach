@@ -1,0 +1,13 @@
+{% load static %}<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>הגדרה ראשונה · חליפות לשמחות</title>
+<link rel="stylesheet" href="{% static 'gemach/app.css' %}"></head><body>
+<div class="login"><form class="box" method="post">{% csrf_token %}
+  <div class="logo"><span class="gm" style="color:var(--copper)">גמ״ח</span><span class="big">חליפות לשמחות</span></div>
+  <p class="hint" style="margin:0;text-align:center">ברוכה הבאה! בוחרים שם משתמש וסיסמה לכניסה למערכת.</p>
+  {% if error %}<div class="msg error">{{ error }}</div>{% endif %}
+  <label>שם משתמש<input name="username" autocomplete="username" required autofocus></label>
+  <label>סיסמה (8 תווים לפחות)<input name="password" type="password" autocomplete="new-password" required></label>
+  <label>שוב את הסיסמה<input name="password2" type="password" autocomplete="new-password" required></label>
+  <button class="btn">התחלה</button>
+</form></div></body></html>

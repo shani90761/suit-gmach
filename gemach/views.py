@@ -453,5 +453,26 @@ def cron(request):
     return JsonResponse({"ok": True, "sent": S.run_reminders()})
 
 
+def first_setup(request):
+    """בהתקנה חדשה (אין אף משתמש) — יצירת משתמש המנהלת. אחרי שיש משתמש, הדף סגור."""
+    from django.contrib.auth import get_user_model, login
+    User = get_user_model()
+    if User.objects.exists():
+        return redirect("login")
+    error = ""
+    if request.method == "POST":
+        u = request.POST.get("username", "").strip()
+        p1, p2 = request.POST.get("password", ""), request.POST.get("password2", "")
+        if not u or len(p1) < 8:
+            error = "צריך שם משתמש וסיסמה של 8 תווים לפחות."
+        elif p1 != p2:
+            error = "הסיסמאות לא זהות."
+        else:
+            user = User.objects.create_superuser(u, "", p1)
+            login(request, user)
+            return redirect("dashboard")
+    return render(request, "gemach/setup.html", {"error": error})
+
+
 def healthz(request):
     return HttpResponse("ok")

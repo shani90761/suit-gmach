@@ -216,3 +216,13 @@ class ApiTests(TestCase):
         self.assertEqual(r["Location"], "/")
         r = self.client.post(f"/orders/{o.id}/pickup/", {"next": "https://evil.example/"})
         self.assertNotIn("evil", r.get("Location", ""))
+
+
+class SetupTests(TestCase):
+    def test_first_run_setup_then_closed(self):
+        self.assertEqual(self.client.get("/")["Location"], "/setup/")
+        r = self.client.post("/setup/", {"username": "m", "password": "pass-12345", "password2": "pass-12345"})
+        self.assertEqual(r["Location"], "/")
+        self.client.logout()
+        self.assertEqual(self.client.get("/setup/")["Location"], "/login/")
+        self.assertTrue(self.client.get("/")["Location"].startswith("/login/"))
