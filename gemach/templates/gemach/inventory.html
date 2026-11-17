@@ -1,30 +1,70 @@
 {% extends "gemach/base.html" %}{% block title %}ז׳קטים ודגמים{% endblock %}
 {% block heading %}ז׳קטים ודגמים{% endblock %}
 {% block content %}
-<p class="sub">{{ jackets|length }} ז׳קטים במלאי.</p>
+{% if old_tags %}<div class="bars"><div class="bar amber"><span class="dot"></span><span class="t"><b>{{ old_tags }} ז׳קטים עם תגית ישנה</b> (לא לפי המבנה דגם + מידה + סידורי)</span>
+  <form method="post">{% csrf_token %}<button class="act" name="action" value="retag_old">יצירת תגיות חדשות</button></form></div></div>{% endif %}
 <div class="grid g2">
-<div class="card grid"><h2>דגמים</h2>
-  {% for m in models %}<form method="post" enctype="multipart/form-data" class="row" style="align-items:center">{% csrf_token %}<input type="hidden" name="action" value="save_model"><input type="hidden" name="model_id" value="{{ m.id }}">
-    {% if m.image %}<img class="mthumb" src="{% url 'model_image' m.id %}" alt="{{ m.name }}">{% else %}<span class="mthumb" style="display:inline-block"></span>{% endif %}
-    <label>שם<input name="name" value="{{ m.name }}" required></label><label>תמונה<input type="file" name="image" accept="image/*"></label>
-    <button class="btn sm sec">שמירה</button></form>
-  {% endfor %}
-  <details><summary>+ דגם חדש</summary><form method="post" enctype="multipart/form-data" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="save_model">
-    <label>שם<input name="name" required></label><label>תמונה<input type="file" name="image" accept="image/*"></label><button class="btn sm">הוספה</button></form></details>
-</div>
-<form class="card grid" method="post">{% csrf_token %}<input type="hidden" name="action" value="add_jacket"><h2>הוספת ז׳קט</h2>
-  <div class="row"><label style="flex:0 0 130px">תגית<input name="tag" required placeholder="AB" pattern="[A-Za-z]{1,6}" title="אותיות באנגלית בלבד" dir="ltr" style="text-transform:uppercase"></label>
-  <label>דגם<select name="model" required>{% for m in models %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}</select></label>
-  <label style="flex:0 0 110px">מידה<input name="size" list="sizes" required></label></div>
+<form class="card grid" method="post" id="jf">{% csrf_token %}<input type="hidden" name="action" value="add_jacket"><h2>הוספת ז׳קט</h2>
+  <div class="row">
+    <label>דגם<select name="model" id="jm" required>{% for m in models %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}</select></label>
+    <label style="flex:0 0 100px">מידה<input name="size" id="js" list="sizes" required inputmode="numeric"></label>
+    <label style="flex:0 0 90px">כמות<input name="count" type="number" min="1" max="30" value="1"></label>
+  </div>
+  <div class="row" style="align-items:center">
+    <label style="flex:0 0 150px">תגית<input name="tag" id="jt" placeholder="אוטומטית" pattern="[A-Za-z]{1,10}" title="אותיות באנגלית בלבד" dir="ltr" style="text-transform:uppercase;font-weight:600;letter-spacing:.08em"></label>
+    <span class="hint" id="jtx"></span>
+  </div>
   <datalist id="sizes">{% for s in sizes %}<option value="{{ s }}">{% endfor %}</datalist>
   <div><button class="btn">הוספה</button></div>
 </form>
+<div class="card"><h2>איך בנויה התגית</h2>
+  <div class="tagparts" dir="ltr"><span><b>K</b><small>דגם</small></span><span><b>D</b><small>מידה</small></span><span><b>A</b><small>סידורי</small></span></div>
+  <p class="hint" style="margin:6px 0 12px">דוגמה: קטיפה שחורה, מידה 8, הראשון במידה הזו. השני יקבל <bdi dir="ltr">KDB</bdi>.</p>
+  <div class="tw"><table><thead><tr><th>מידה</th>{% for sz, l in size_table %}<th class="num" style="text-align:center">{{ sz }}</th>{% endfor %}</tr></thead>
+  <tbody><tr><td class="muted">אות</td>{% for sz, l in size_table %}<td style="text-align:center;font-weight:600" dir="ltr">{{ l }}</td>{% endfor %}</tr></tbody></table></div>
 </div>
-<div class="card tw" style="margin-top:16px"><table><thead><tr><th>תגית</th><th>דגם</th><th>מידה</th><th>מצב</th><th></th></tr></thead><tbody>
-{% for j in jackets %}<tr><td class="num"><b>{{ j.tag }}</b></td><td>{{ j.model.name }}</td><td class="num">{{ j.size }}</td>
+</div>
+
+<div class="card grid" style="margin-top:16px"><h2>דגמים</h2>
+  {% for m in models %}<form method="post" enctype="multipart/form-data" class="row" style="align-items:center">{% csrf_token %}<input type="hidden" name="action" value="save_model"><input type="hidden" name="model_id" value="{{ m.id }}">
+    {% if m.image %}<img class="mthumb" src="{% url 'model_image' m.id %}" alt="{{ m.name }}">{% else %}<span class="mthumb" style="display:inline-block"></span>{% endif %}
+    <label>שם<input name="name" value="{{ m.name }}" required></label>
+    <label style="flex:0 0 110px">אות בתגית<input name="code" value="{{ m.code }}" maxlength="1" pattern="[A-Za-z]" dir="ltr" style="text-transform:uppercase;font-weight:600;text-align:center" required></label>
+    <label class="filepick">תמונה<span class="mini">בחירת תמונה</span><input type="file" name="image" accept="image/*"><small class="fname"></small></label>
+    <button class="btn sm sec">שמירה</button></form>
+  {% endfor %}
+  <details><summary>+ דגם חדש</summary><form method="post" enctype="multipart/form-data" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="save_model">
+    <label>שם<input name="name" required></label><label style="flex:0 0 110px">אות בתגית<input name="code" maxlength="1" pattern="[A-Za-z]" dir="ltr" style="text-transform:uppercase;text-align:center" required></label>
+    <label class="filepick">תמונה<span class="mini">בחירת תמונה</span><input type="file" name="image" accept="image/*"><small class="fname"></small></label><button class="btn sm">הוספה</button></form></details>
+</div>
+
+<div class="card tw" style="margin-top:16px"><h2>כל הז׳קטים <span class="n">{{ jackets|length }}</span></h2>
+<table><thead><tr><th>תגית</th><th>דגם</th><th>מידה</th><th>מצב</th><th></th></tr></thead><tbody>
+{% for j in jackets %}<tr><td><form method="post" class="actions">{% csrf_token %}<input type="hidden" name="jacket" value="{{ j.id }}"><input name="tag" value="{{ j.tag }}" dir="ltr" aria-label="תגית" style="width:90px;height:32px;font-weight:600;letter-spacing:.06em;text-transform:uppercase" pattern="[A-Za-z]{1,10}"><button class="mini" name="action" value="retag" title="שמירת תגית">שמירה</button></form></td>
+<td>{{ j.model.name }}</td><td class="num">{{ j.size }}</td>
 <td>{% if j.active %}<span class="chip ok">פעיל</span>{% else %}<span class="chip warn">מושבת</span> {{ j.disabled_note }}{% endif %}</td>
 <td><form method="post" class="actions">{% csrf_token %}<input type="hidden" name="jacket" value="{{ j.id }}">
-{% if j.active %}<input name="note" placeholder="סיבת השבתה" style="width:160px"><button class="btn sm sec" name="action" value="disable">השבתה</button>
+{% if j.active %}<input name="note" placeholder="סיבת השבתה" style="width:150px;height:32px"><button class="btn sm sec" name="action" value="disable">השבתה</button>
 {% else %}<button class="btn sm" name="action" value="enable">החזרה לפעיל</button>{% endif %}</form></td></tr>
-{% empty %}<tr><td colspan="5" class="empty">עוד אין ז׳קטים. הוסיפי את הראשון למעלה.</td></tr>{% endfor %}</tbody></table></div>
+{% empty %}<tr><td colspan="5" class="empty">עוד אין ז׳קטים. מוסיפים למעלה.</td></tr>{% endfor %}</tbody></table></div>
+{{ tags_json|json_script:"tags-data" }}{{ codes_json|json_script:"codes-data" }}
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const tags=new Set(JSON.parse(document.getElementById('tags-data').textContent));
+  const codes=JSON.parse(document.getElementById('codes-data').textContent);
+  const L="ABCDEFGHIJKLMNOPQRSTUVWXYZ", ODD="TUVWXYZ";
+  const sizeLetter=s=>{s=String(s).trim(); if(/^\d+$/.test(s)){const n=+s; if(n%2===0&&n>=2&&n<=36)return L[n/2-1]; if(n%2===1&&n<=13)return ODD[(n-1)/2];} const l=s.toUpperCase().replace(/[^A-Z]/g,''); return l[0]||'X'};
+  const serial=i=>{let o='';i++;while(i){const r=(i-1)%26;o=L[r]+o;i=Math.floor((i-1)/26)}return o};
+  const m=document.getElementById('jm'), sz=document.getElementById('js'), t=document.getElementById('jt'), x=document.getElementById('jtx');
+  function upd(){
+    if(!sz.value.trim()){t.placeholder='אוטומטית';x.textContent='';return}
+    const p=(codes[m.value]||'X')+sizeLetter(sz.value); let i=0; while(tags.has(p+serial(i)))i++;
+    t.placeholder=p+serial(i); x.textContent=t.value?'':'התגית שתיווצר: '+p+serial(i);
+  }
+  m.onchange=upd; sz.oninput=upd; t.oninput=upd; upd();
+  document.querySelectorAll('.filepick input').forEach(i=>i.onchange=()=>{i.parentElement.querySelector('.fname').textContent=i.files[0]?i.files[0].name:''});
+})();
+</script>
 {% endblock %}

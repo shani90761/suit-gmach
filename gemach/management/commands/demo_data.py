@@ -14,13 +14,12 @@ class Command(BaseCommand):
         if not U.objects.filter(username="demo").exists():
             U.objects.create_superuser("demo", "", "demo-12345")
         black, cream = JacketModel.objects.get(name="קטיפה שחורה"), JacketModel.objects.get(name="שמנת")
-        import string
-        letters = iter(list(string.ascii_uppercase) + [a + b for a in "AB" for b in string.ascii_uppercase])
+        from gemach.models import next_tag
         for m, sizes in ((black, {"2": 2, "4": 2, "6": 3, "8": 3, "10": 2, "12": 2}),
                          (cream, {"2": 1, "4": 2, "6": 2, "8": 2, "10": 1})):
             for size, n in sizes.items():
                 for _ in range(n):
-                    Jacket.objects.get_or_create(tag=next(letters), defaults={"model": m, "size": size})
+                    Jacket.objects.create(tag=next_tag(m, size), model=m, size=size)
         d = today()
         def order(name, phone, email, event, lines, status="booked"):
             c = Customer.objects.create(name=name, phone=phone, email=email)

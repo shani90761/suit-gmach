@@ -354,21 +354,48 @@ def inventory(request):
     if request.method == "POST":
         a = request.POST.get("action")
         if a == "add_jacket":
+            from .models import next_tag
+            mdl = JacketModel.objects.filter(pk=request.POST.get("model")).first()
+            size = request.POST.get("size", "").strip()
+            tag = request.POST.get("tag", "").strip().upper()
             try:
-                tag = request.POST["tag"].strip().upper()
-                mdl = get_object_or_404(JacketModel, pk=request.POST["model"])
-                size = request.POST["size"].strip()
-                if not size or not tag:
-                    raise ValueError
-                if not re.fullmatch(r"[A-Z]{1,6}", tag):
-                    messages.error(request, "תגית: אותיות באנגלית בלבד, למשל A או AB.")
-                elif Jacket.objects.filter(tag=tag).exists():
-                    messages.error(request, f"התגית {tag} כבר קיימת.")  # REQ-INV-4
-                else:
-                    Jacket.objects.create(tag=tag, model=mdl, size=size)
-                    messages.success(request, f"ז'קט {tag} נוסף.")
-            except (KeyError, ValueError):
-                messages.error(request, "צריך תגית, דגם ומידה.")
+                count = max(1, min(30, int(request.POST.get("count") or 1)))
+            except ValueError:
+                count = 1
+            if not mdl or not size:
+                messages.error(request, "צריך לבחור דגם ומידה.")
+            elif tag and not re.fullmatch(r"[A-Z]{1,10}", tag):
+                messages.error(request, "תגית: אותיות באנגלית בלבד, למשל KDA.")
+            elif tag and Jacket.objects.filter(tag=tag).exists():
+                messages.error(request, f"התגית {tag} כבר קיימת.")  # REQ-INV-4
+            else:
+                made = []
+                for i in range(count):
+                    t = tag if (tag and i == 0) else next_tag(mdl, size)
+                    Jacket.objects.create(tag=t, model=mdl, size=size)
+                    made.append(t)
+                messages.success(request, ("נוסף ז'קט " if len(made) == 1 else f"נוספו {len(made)} ז'קטים: ") + ", ".join(made))
+        elif a == "retag":
+            j = get_object_or_404(Jacket, pk=request.POST.get("jacket"))
+            t = request.POST.get("tag", "").strip().upper()
+            if not re.fullmatch(r"[A-Z]{1,10}", t):
+                messages.error(request, "תגית: אותיות באנגלית בלבד.")
+            elif Jacket.objects.filter(tag=t).exclude(pk=j.pk).exists():
+                messages.error(request, f"התגית {t} כבר קיימת.")
+            else:
+                old, j.tag = j.tag, t
+                j.save(update_fields=["tag"])
+                messages.success(request, f"התגית שונתה: {old} ← {t}")
+        elif a == "retag_old":
+            from .models import next_tag
+            changed = []
+            for j in Jacket.objects.select_related("model"):
+                if not re.fullmatch(r"[A-Z]{1,10}", j.tag):
+                    old = j.tag
+                    j.tag = next_tag(j.model, j.size)
+                    j.save(update_fields=["tag"])
+                    changed.append(f"{old}←{j.tag}")
+            messages.success(request, "תגיות חדשות: " + ", ".join(changed) if changed else "אין ז'קטים עם תגית ישנה.")
         elif a in ("disable", "enable", "delete"):
             j = get_object_or_404(Jacket, pk=request.POST.get("jacket"))
             if a == "disable":
@@ -390,7 +417,16 @@ def inventory(request):
             mid = request.POST.get("model_id")
             m = get_object_or_404(JacketModel, pk=mid) if mid else JacketModel()
             m.name = request.POST.get("name", "").strip() or m.name
-            m.description = request.POST.get("description", "").strip()
+            m.description = request.POST.get("description", m.description).strip()
+            code = request.POST.get("code", "").strip().upper()[:1]
+            if code:
+                if not code.isalpha() or not code.isascii():
+                    messages.error(request, "אות הדגם: אות אחת באנגלית.")
+                    return redirect("inventory")
+                if JacketModel.objects.filter(code=code).exclude(pk=m.pk).exists():
+                    messages.error(request, f"האות {code} כבר שייכת לדגם אחר.")
+                    return redirect("inventory")
+                m.code = code
             f = request.FILES.get("image")
             if f:
                 if f.size > conf.MAX_IMAGE_BYTES or not (f.content_type or "").startswith("image/"):
@@ -401,10 +437,16 @@ def inventory(request):
                 m.save()
                 messages.success(request, f"הדגם {m.name} נשמר.")
         return redirect("inventory")
-    from .models import tag_key
+    from .models import size_letter, tag_key
     jackets = sorted(Jacket.objects.select_related("model"), key=lambda j: tag_key(j.tag))
+    sizes = S.all_sizes()
+    table_sizes = sorted(set(sizes) | {str(n) for n in range(2, 15, 2)}, key=S.size_key)
     return render(request, "gemach/inventory.html", {
-        "models": JacketModel.objects.all(), "jackets": jackets, "sizes": S.all_sizes(),
+        "models": JacketModel.objects.all(), "jackets": jackets, "sizes": sizes,
+        "size_table": [(sz, size_letter(sz)) for sz in table_sizes],
+        "old_tags": sum(1 for j in jackets if not re.fullmatch(r"[A-Z]{1,10}", j.tag)),
+        "tags_json": [j.tag for j in jackets],
+        "codes_json": {m.id: (m.code or m.name[:1]).upper() for m in JacketModel.objects.all()},
     })
 
 

@@ -249,6 +249,22 @@ class CalendarAndTagTests(TestCase):
             self.client.post("/inventory/", {"action": "add_jacket", "tag": bad, "model": self.m.id, "size": "4"})
         self.assertEqual(Jacket.objects.count(), 1)
 
+    def test_auto_tag_model_size_serial(self):
+        """תגית אוטומטית: S (שמנת) + C (מידה 6) + A, B, C…"""
+        self.client.post("/inventory/", {"action": "add_jacket", "tag": "", "model": self.m.id, "size": "6", "count": "3"})
+        self.assertEqual(sorted(Jacket.objects.values_list("tag", flat=True)), ["SCA", "SCB", "SCC"])
+        black = JacketModel.objects.get(name="קטיפה שחורה")
+        self.client.post("/inventory/", {"action": "add_jacket", "model": black.id, "size": "8"})
+        self.assertTrue(Jacket.objects.filter(tag="KDA", size="8").exists())
+        from .models import serial_letters, size_letter
+        self.assertEqual([size_letter(x) for x in ("2", "8", "14", "1", "13")], ["A", "D", "G", "T", "Z"])
+        self.assertEqual([serial_letters(i) for i in (0, 25, 26)], ["A", "Z", "AA"])
+
+    def test_retag_old_numeric_tags(self):
+        Jacket.objects.create(tag="7", model=self.m, size="4")
+        self.client.post("/inventory/", {"action": "retag_old"})
+        self.assertEqual(list(Jacket.objects.values_list("tag", flat=True)), ["SBA"])
+
     def test_natural_tag_order(self):
         from .models import tag_key
         self.assertEqual(sorted(["AB", "B", "AA", "Z", "A"], key=tag_key), ["A", "B", "Z", "AA", "AB"])

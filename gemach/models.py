@@ -47,6 +47,7 @@ class Settings(models.Model):
 class JacketModel(models.Model):
     """דגם — קטיפה שחורה / שמנת. REQ-INV-1, REQ-INV-2."""
     name = models.CharField("שם הדגם", max_length=60, unique=True)
+    code = models.CharField("אות הדגם בתגית", max_length=1, blank=True)  # K = קטיפה שחורה, S = שמנת
     description = models.CharField("תיאור", max_length=200, blank=True)
     image = models.BinaryField("תמונה", blank=True, null=True, editable=True)
     image_type = models.CharField(max_length=40, blank=True)
@@ -63,6 +64,43 @@ def tag_key(tag):
     """מיון תגיות כמו בגיליון: A..Z, אחר כך AA, AB... (תגיות ישנות עם מספרים — בסוף)."""
     t = str(tag)
     return (0 if t.isalpha() else 1, len(t), t)
+
+
+# ---------- תגית אוטומטית: דגם + מידה + סידורי (KDA) ----------
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+ODD_SIZE_LETTERS = "TUVWXYZ"  # מידות אי-זוגיות 1,3,5..13
+
+
+def size_letter(size):
+    """A=2 B=4 C=6 D=8 E=10 F=12 G=14 … ; אי-זוגיות: T=1 U=3 V=5 W=7 X=9 Y=11 Z=13."""
+    s = str(size).strip()
+    if s.isdigit():
+        n = int(s)
+        if n % 2 == 0 and 2 <= n <= 36:
+            return LETTERS[n // 2 - 1]
+        if n % 2 == 1 and n <= 13:
+            return ODD_SIZE_LETTERS[n // 2]
+    letters = "".join(ch for ch in s.upper() if ch in LETTERS)
+    return letters[:1] or "X"
+
+
+def serial_letters(i):
+    """0→A, 25→Z, 26→AA …"""
+    out = ""
+    i += 1
+    while i:
+        i, r = divmod(i - 1, 26)
+        out = LETTERS[r] + out
+    return out
+
+
+def next_tag(model, size):
+    prefix = (model.code or model.name[:1]).upper() + size_letter(size)
+    used = set(Jacket.objects.filter(tag__startswith=prefix).values_list("tag", flat=True))
+    i = 0
+    while prefix + serial_letters(i) in used:
+        i += 1
+    return prefix + serial_letters(i)
 
 
 class Jacket(models.Model):
