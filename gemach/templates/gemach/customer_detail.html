@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}{{ c.name }}{% endblock %}
+{% block heading %}{{ c.name }}{% endblock %}
 {% block content %}
-<h1>{{ c.name }}</h1><p class="sub">{{ orders|length }} הזמנות</p>
+<p class="sub">{{ orders|length }} הזמנות</p>
 <div class="grid g2">
 <form class="card grid" method="post">{% csrf_token %}<input type="hidden" name="action" value="save"><h2>פרטים</h2>
   <div class="row"><label>שם<input name="name" value="{{ c.name }}" required></label><label>טלפון<input name="phone" value="{{ c.phone }}" required></label></div>

@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}הגדרות{% endblock %}
+{% block heading %}הגדרות{% endblock %}
 {% block content %}
-<h1>הגדרות</h1><p class="sub">אפשר להשתמש בנוסחים במילים: {name} {lines} {total} {pickup} {return} {event} {phone}</p>
+<p class="sub">אפשר להשתמש בנוסחים במילים: {name} {lines} {total} {pickup} {return} {event} {phone}</p>
 <form method="post" class="grid">{% csrf_token %}
 <div class="card grid"><h2>כללי</h2><div class="row">
   <label>טלפון הגמ״ח<input name="gemach_phone" value="{{ s.gemach_phone }}"></label>

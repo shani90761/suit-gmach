@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}לוח זמינות{% endblock %}
+{% block heading %}לוח זמינות{% endblock %}
 {% block content %}
-<div class="head"><div><h1>לוח זמינות</h1><p class="sub" style="margin:0">כמה ז׳קטים פנויים לשמחה בכל תאריך. אדום: אין פנוי.</p></div>
+<div class="head"><div><p class="sub" style="margin:0">כמה ז׳קטים פנויים לשמחה בכל תאריך. אדום: אין פנוי.</p></div>
 <div class="actions"><a class="btn sm sec" href="?from={{ prev|date:'Y-m-d' }}">→ שבועיים קודמים</a><a class="btn sm sec" href="?from={{ next|date:'Y-m-d' }}">שבועיים הבאים ←</a></div></div>
 <div class="card tw"><table class="board"><thead><tr><th>דגם · מידה</th>{% for d in days %}<th class="{% if d.weekday == 4 or d.weekday == 5 %}wk{% endif %}">{{ d|date:"D" }}<br>{{ d|date:"j.n" }}</th>{% endfor %}</tr></thead>
 <tbody>{% for r in rows %}<tr><td>{{ r.model.name }} <b>{{ r.size }}</b></td>{% for c in r.cells %}<td class="num {% if c == 0 %}z{% elif c == 1 %}low{% endif %}">{{ c }}</td>{% endfor %}</tr>

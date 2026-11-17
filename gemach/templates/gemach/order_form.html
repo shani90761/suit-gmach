@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}{% if order %}עריכת הזמנה{% else %}הזמנה חדשה{% endif %}{% endblock %}
+{% block heading %}{% if order %}עריכת הזמנה {{ order.pk }}{% else %}הזמנה חדשה{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if order %}עריכת הזמנה {{ order.pk }}{% else %}הזמנה חדשה{% endif %}</h1>
+
 <p class="sub">האיסוף יום לפני השמחה, וההחזרה יום אחרי. ההזמנה נסגרת ברגע שלוחצים שמירה.</p>
 {% if errors %}<div class="alert bad" style="margin-bottom:16px"><h2>אי אפשר לשמור</h2><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
 <form method="post" class="grid" id="f">{% csrf_token %}

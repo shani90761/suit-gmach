@@ -1,0 +1,10 @@
+{% load gemach_ui %}<div class="item">
+  <span class="kind {{ it.kind }}">{% if it.kind == 'out' %}איסוף{% else %}החזרה{% endif %}</span>
+  <div class="who"><a class="n" href="{% url 'order_detail' it.o.pk %}">{{ it.o.customer.name }}</a>
+    <div class="s"><bdi dir="ltr">{{ it.o.customer.phone|phone }}</bdi>{% if it.o.fitting_note %}<span>{{ it.o.fitting_note }}</span>{% endif %}{% if it.o.note %}<span>{{ it.o.note }}</span>{% endif %}</div>
+    <div class="pills">{% for l in it.o.live_lines %}<span class="pill"><i class="sw" style="background:{{ l.model.name|swatch }}"></i>{{ l.model.name }} {{ l.size }}{% if l.child_name %} · {{ l.child_name }}{% endif %}{% if l.jacket %} · #{{ l.jacket.tag }}{% endif %}</span>{% endfor %}</div>
+  </div>
+  <span class="money {% if it.o.paid %}ok{% endif %}">{% if it.o.paid %}שולם{% else %}{{ it.o.total }} ₪{% endif %}</span>
+  {% if active %}<button type="button" class="go" data-open="dlg-{{ it.kind }}-{{ it.o.pk }}">{% if it.kind == 'out' %}איסוף{% else %}החזרה{% endif %}</button>{% else %}<a class="go" style="display:inline-flex;align-items:center;text-decoration:none" href="{% url 'order_detail' it.o.pk %}">פתיחה</a>{% endif %}
+</div>
+{% if active %}{% if it.kind == 'out' %}{% include "gemach/_pickup_dialog.html" with o=it.o options=it.options %}{% else %}{% include "gemach/_return_dialog.html" with o=it.o %}{% endif %}{% endif %}

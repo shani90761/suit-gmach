@@ -1,10 +1,10 @@
 {% load static %}<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:,"><title>כניסה · חליפות לשמחות</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="{% static 'gemach/app.css' %}"></head><body>
 <div class="login"><form class="box" method="post">{% csrf_token %}
-  <div class="logo"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div>
+  <div class="logo"><span class="gm" style="color:var(--copper)">גמ״ח</span><span class="big">חליפות לשמחות</span></div>
   {% if form.errors %}<div class="msg error">שם משתמש או סיסמה שגויים.</div>{% endif %}
   <label>שם משתמש<input name="username" autocomplete="username" required autofocus></label>
   <label>סיסמה<input name="password" type="password" autocomplete="current-password" required></label>

@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}לקוחות{% endblock %}
+{% block heading %}לקוחות{% endblock %}
 {% block content %}
-<h1>לקוחות</h1><p class="sub">אותו טלפון יכול להופיע אצל כמה בני משפחה.</p>
+<p class="sub">אותו טלפון יכול להופיע אצל כמה בני משפחה.</p>
 <form class="card row" style="margin-bottom:16px"><label>חיפוש לפי שם או טלפון<input name="q" value="{{ q }}" autofocus></label><button class="btn sec">חיפוש</button></form>
 <div class="card tw"><table><thead><tr><th>שם</th><th>טלפון</th><th>מייל</th></tr></thead><tbody>
 {% for c in customers %}<tr><td><a href="{% url 'customer_detail' c.pk %}">{{ c.name }}</a></td><td class="num">{{ c.phone }}</td><td>{{ c.email|default:"—" }}</td></tr>

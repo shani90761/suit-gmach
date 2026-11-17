@@ -1,30 +1,52 @@
-{% load static %}<!doctype html>
+{% load static gemach_ui %}<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}ניהול{% endblock %} · חליפות לשמחות</title>
-<link rel="icon" href="data:,"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;700&display=swap">
+<link rel="icon" href="data:,"><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="{% static 'gemach/app.css' %}">
 </head><body>
 <div class="layout">
 <aside class="side">
-  <div class="logo"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span><span class="city">ירושלים</span></div>
+  <div class="logo"><span class="gm">גמ״ח</span><span class="big">חליפות לשמחות</span></div>
   {% with u=request.resolver_match.url_name %}
   <nav class="nav">
-    <a class="new" href="{% url 'order_new' %}">+ הזמנה חדשה</a>
-    <a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}">מסך ראשי</a>
-    <a href="{% url 'availability' %}" class="{% if u == 'availability' %}on{% endif %}">בדיקת זמינות</a>
-    <a href="{% url 'board' %}" class="{% if u == 'board' %}on{% endif %}">לוח זמינות</a>
-    <a href="{% url 'orders' %}" class="{% if u == 'orders' or u == 'order_detail' or u == 'order_edit' %}on{% endif %}">הזמנות</a>
-    <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_detail' %}on{% endif %}">לקוחות</a>
-    <a href="{% url 'inventory' %}" class="{% if u == 'inventory' %}on{% endif %}">ז׳קטים ודגמים</a>
-    <a href="{% url 'settings' %}" class="{% if u == 'settings' %}on{% endif %}">הגדרות</a>
+    <a href="{% url 'dashboard' %}" class="{% if u == 'dashboard' %}on{% endif %}"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/></svg>מסך ראשי</a>
+    <a href="{% url 'availability' %}" class="{% if u == 'availability' or u == 'board' %}on{% endif %}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>זמינות</a>
+    <a href="{% url 'orders' %}" class="{% if u == 'orders' or u == 'order_detail' or u == 'order_edit' or u == 'order_new' %}on{% endif %}"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg>הזמנות{% if late_count %}<span class="badge">{{ late_count }}</span>{% endif %}</a>
+    <a href="{% url 'customers' %}" class="{% if u == 'customers' or u == 'customer_detail' %}on{% endif %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>לקוחות</a>
+    <a href="{% url 'inventory' %}" class="{% if u == 'inventory' %}on{% endif %}"><svg viewBox="0 0 24 24"><path d="M8 3l4 3 4-3 4 4-3 3v11H7V10L4 7z"/></svg>ז׳קטים</a>
+    <a href="{% url 'settings' %}" class="{% if u == 'settings' %}on{% endif %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>הגדרות</a>
   </nav>
   {% endwith %}
   <div class="foot"><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>יציאה</button></form></div>
 </aside>
 <main class="main">
+  <div class="topbar">
+    <h1>{% block heading %}{% endblock %}</h1>
+    <div class="tools">
+      <div class="gs" id="gs">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="gq" placeholder="חיפוש לקוח · שם או טלפון" autocomplete="off" aria-label="חיפוש לקוח">
+        <kbd>/</kbd><div class="gres" id="gres" hidden></div>
+      </div>
+      <button class="btn" type="button" id="newo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>הזמנה חדשה</button>
+    </div>
+  </div>
   {% if messages %}<div class="msgs">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
   {% block content %}{% endblock %}
 </main>
 </div>
+
+<dialog class="wide" id="wz" aria-labelledby="wt">
+  <header><h3 id="wt">הזמנה חדשה</h3><button class="x" type="button" data-close aria-label="סגירה">×</button></header>
+  <div class="steps" id="wsteps"></div>
+  <div class="body" id="wb"></div>
+  <footer><div class="l"><button class="btn" type="button" id="wnext">המשך</button><button class="btn ghost" type="button" id="wback">חזרה</button></div><span class="err" id="werr"></span></footer>
+</dialog>
+<form method="post" action="{% url 'order_new' %}" id="wform" hidden>{% csrf_token %}</form>
+<script>
+window.GEMACH={search:"{% url 'customer_search' %}",lookup:"{% url 'customer_lookup' %}",avail:"{% url 'availability_api' %}",order:"/orders/",customer:"/customers/"};
+</script>
+<script src="{% static 'gemach/app.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body></html>

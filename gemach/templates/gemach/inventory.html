@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}ז׳קטים ודגמים{% endblock %}
+{% block heading %}ז׳קטים ודגמים{% endblock %}
 {% block content %}
-<h1>ז׳קטים ודגמים</h1><p class="sub">{{ jackets|length }} ז׳קטים במלאי.</p>
+<p class="sub">{{ jackets|length }} ז׳קטים במלאי.</p>
 <div class="grid g2">
 <div class="card grid"><h2>דגמים</h2>
   {% for m in models %}<form method="post" enctype="multipart/form-data" class="row" style="align-items:center">{% csrf_token %}<input type="hidden" name="action" value="save_model"><input type="hidden" name="model_id" value="{{ m.id }}">

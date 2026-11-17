@@ -1,6 +1,7 @@
 {% extends "gemach/base.html" %}{% block title %}הזמנות{% endblock %}
+{% block heading %}הזמנות{% endblock %}
 {% block content %}
-<div class="head"><h1>הזמנות</h1><a class="btn copper" href="{% url 'order_new' %}">+ הזמנה חדשה</a></div>
+<div class="head"></div>
 <form class="card row" style="margin-bottom:16px"><label>חיפוש לפי שם או טלפון<input name="q" value="{{ q }}" autofocus></label>
 <label style="flex:0 0 160px">להציג<select name="show"><option value="open" {% if show == 'open' %}selected{% endif %}>פתוחות</option><option value="all" {% if show == 'all' %}selected{% endif %}>הכל</option></select></label>
 <button class="btn sec">חיפוש</button></form>

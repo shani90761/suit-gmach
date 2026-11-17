@@ -1,13 +1,14 @@
 {% extends "gemach/base.html" %}{% block title %}בדיקת זמינות{% endblock %}
+{% block heading %}בדיקת זמינות{% endblock %}
 {% block content %}
-<h1>בדיקת זמינות</h1><p class="sub">מקלידים את תאריך השמחה ורואים מה פנוי. האיסוף יום לפני, וההחזרה יום אחרי.</p>
-<form class="quick card" style="margin-bottom:16px"><label style="flex-direction:row;align-items:center;gap:8px">תאריך השמחה<input type="date" name="date" value="{{ date|date:'Y-m-d' }}" required autofocus></label><button class="btn">בדיקה</button></form>
+<p class="sub">מקלידים את תאריך השמחה ורואים מה פנוי. האיסוף יום לפני, וההחזרה יום אחרי.</p>
+<form class="card row" style="margin-bottom:16px"><label style="flex:0 0 220px">תאריך השמחה<input type="date" name="date" value="{{ date|date:'Y-m-d' }}" required autofocus></label><button class="btn">בדיקה</button><a class="btn sec" href="{% url 'board' %}">לוח שבועיים</a></form>
 {% if date %}
 <div class="card"><h2>פנוי לשמחה ביום {{ date|date:"l" }}, {{ date|date:"j.n.Y" }} <span class="n">איסוף {{ pickup|date:"j.n" }} · החזרה {{ ret|date:"j.n" }}</span></h2>
 {% if rows %}<div class="tw"><table><thead><tr><th>דגם</th><th>מידה</th><th>פנויים</th><th>מתוך</th><th></th></tr></thead><tbody>
 {% for r in rows %}<tr><td>{{ r.model.name }}</td><td class="num"><b>{{ r.size }}</b></td>
 <td class="num"><span class="free {% if not r.free %}zero{% endif %}">{{ r.free }}</span>{% if r.short %} <span class="chip bad">חסר {{ r.short|stringformat:"d"|cut:"-" }}</span>{% endif %}</td><td class="num muted">{{ r.total }}</td>
-<td>{% if r.free %}<a class="btn sm sec" href="{% url 'order_new' %}?date={{ date|date:'Y-m-d' }}&model={{ r.model.id }}&size={{ r.size|urlencode }}">הזמנה</a>{% endif %}</td></tr>{% endfor %}
+<td>{% if r.free %}<button type="button" class="btn sm sec" data-wizard-date="{{ date|date:'Y-m-d' }}">הזמנה</button>{% endif %}</td></tr>{% endfor %}
 </tbody></table></div>{% else %}<p class="empty">עדיין אין ז׳קטים במלאי. <a href="{% url 'inventory' %}">להוספת ז׳קטים</a></p>{% endif %}
 </div>{% endif %}
 {% endblock %}

@@ -188,3 +188,31 @@ class ViewTests(TestCase):
         for url in ("/", "/availability/?date=2030-01-01", "/board/", "/orders/", "/orders/new/",
                     "/inventory/", "/customers/", "/settings/"):
             self.assertEqual(self.client.get(url).status_code, 200, url)
+
+
+class ApiTests(TestCase):
+    def setUp(self):
+        self.m = JacketModel.objects.get(name="שמנת")
+        Jacket.objects.create(tag=1, model=self.m, size="4")
+        self.u = get_user_model().objects.create_user("admin", "", "pass-12345")
+        self.client.force_login(self.u)
+
+    def test_search_by_name_and_phone(self):
+        Customer.objects.create(name="משה כהן", phone="0527000001")
+        self.assertEqual(len(self.client.get("/api/search/?q=כהן").json()["customers"]), 1)
+        self.assertEqual(len(self.client.get("/api/search/?q=700000").json()["customers"]), 1)
+        self.assertEqual(self.client.get("/api/search/?q=").json()["customers"], [])
+
+    def test_availability_api(self):
+        r = self.client.get("/api/availability/?date=2030-05-10").json()
+        self.assertEqual(r["pickup"], "2030-05-09")
+        self.assertEqual(r["models"][0]["sizes"], [{"size": "4", "free": 1}])
+
+    def test_pickup_returns_to_dashboard(self):
+        c = Customer.objects.create(name="א", phone="0527000001")
+        o = mk_order(c, today() + dt.timedelta(days=1), ["4"], self.m)
+        j = Jacket.objects.get(tag=1)
+        r = self.client.post(f"/orders/{o.id}/pickup/", {f"jacket_{o.live_lines[0].id}": j.id, "paid": "1", "next": "/"})
+        self.assertEqual(r["Location"], "/")
+        r = self.client.post(f"/orders/{o.id}/pickup/", {"next": "https://evil.example/"})
+        self.assertNotIn("evil", r.get("Location", ""))

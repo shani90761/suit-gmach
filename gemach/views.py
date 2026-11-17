@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.crypto import constant_time_compare
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -27,18 +28,66 @@ def dashboard(request):
     d = today()
     tmr = d + dt.timedelta(days=1)
     base = Order.objects.select_related("customer").prefetch_related("lines__model", "lines__jacket")
-    ctx = {
-        "late": S.late_orders(),
-        "disabled": Jacket.objects.filter(active=False).select_related("model"),
-        "shortages": S.shortages(),
-        "pickups": [(day, list(base.filter(status=Order.BOOKED, event_date=day + dt.timedelta(days=1))))
-                    for day in (d, tmr)],
-        "returns": [(day, list(base.filter(status=Order.PICKED, event_date=day - dt.timedelta(days=1))))
-                    for day in (d, tmr)],
-        "debts": [o for o in base.filter(status__in=[Order.PICKED, Order.RETURNED], paid=False)],
-        "today": d,
-    }
-    return render(request, "gemach/dashboard.html", ctx)
+
+    def day_items(day):
+        items = []
+        for o in base.filter(status=Order.BOOKED, event_date=day + dt.timedelta(days=1)):
+            items.append({"kind": "out", "o": o, "options": [(l, S.free_jackets_for(l)) for l in o.live_lines]})
+        for o in base.filter(status=Order.PICKED, event_date=day - dt.timedelta(days=1)):
+            items.append({"kind": "in", "o": o})
+        return items
+
+    late = S.late_orders()
+    debts = list(base.filter(status__in=[Order.PICKED, Order.RETURNED], paid=False))
+    today_items, tomorrow_items = day_items(d), day_items(tmr)
+    return render(request, "gemach/dashboard.html", {
+        "late": late, "disabled": Jacket.objects.filter(active=False).select_related("model"),
+        "shortages": S.shortages(), "today_items": today_items, "tomorrow_items": tomorrow_items,
+        "debts": debts, "debt_total": sum(o.total for o in debts), "today": d,
+        "k_out": sum(1 for i in today_items if i["kind"] == "out"),
+        "k_in": sum(1 for i in today_items if i["kind"] == "in"),
+        "k_late": sum(len([l for l in o.live_lines if not l.returned]) for o in late),
+    })
+
+
+def _back(request, fallback):
+    nxt = request.POST.get("next") or request.GET.get("next")
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        return redirect(nxt)
+    return fallback
+
+
+def customer_search(request):
+    """חיפוש הלקוח בסרגל העליון."""
+    q = request.GET.get("q", "").strip()
+    if not q:
+        return JsonResponse({"customers": []})
+    digits = Customer.normalize_phone(q)
+    cond = Q(name__icontains=q)
+    if len(digits) >= 3:
+        cond |= Q(phone__contains=digits)
+    out = []
+    for c in Customer.objects.filter(cond).prefetch_related("orders")[:8]:
+        orders = list(c.orders.all())
+        nxt = min((o.event_date for o in orders if o.status == Order.BOOKED and o.event_date >= today()), default=None)
+        out.append({"id": c.id, "name": c.name, "phone": c.phone, "orders": len(orders),
+                    "next": f"{nxt:%d.%m}" if nxt else "", "late": any(o.is_late for o in orders)})
+    return JsonResponse({"customers": out})
+
+
+def availability_api(request):
+    """זמינות לתאריך — לחלון ההזמנה החדשה."""
+    d = parse_date(request.GET.get("date"))
+    if not d:
+        return JsonResponse({"error": "date"}, status=400)
+    models = []
+    rows = S.availability_table(d)
+    for m in JacketModel.objects.all():
+        sizes = [{"size": r["size"], "free": r["free"]} for r in rows if r["model"].id == m.id]
+        if sizes:
+            models.append({"id": m.id, "name": m.name, "sizes": sizes})
+    return JsonResponse({"date": d.isoformat(), "pickup": (d - dt.timedelta(days=1)).isoformat(),
+                         "return": (d + dt.timedelta(days=1)).isoformat(), "models": models})
 
 
 def availability(request):
@@ -216,8 +265,8 @@ def order_pickup(request, pk):
         for e in errors:
             messages.error(request, e)
     else:
-        messages.success(request, "סומן כנאסף." + ("" if order.paid else " ההזמנה מסומנת ״חוב״."))
-    return redirect("order_detail", pk=pk)
+        messages.success(request, f"{order.customer.name}: סומן כנאסף." + ("" if order.paid else " ההזמנה מסומנת ״חוב״."))
+    return _back(request, redirect("order_detail", pk=pk))
 
 
 @require_POST
@@ -229,8 +278,8 @@ def order_return(request, pk):
         messages.error(request, "לא סומן אף ז'קט.")
     else:
         S.do_return(order, ids, damaged, request.POST.get("damage_note", "").strip())
-        messages.success(request, "ההחזרה נרשמה." + (" ז'קט פגום הושבת." if damaged & ids else ""))
-    return redirect("order_detail", pk=pk)
+        messages.success(request, f"{order.customer.name}: ההחזרה נרשמה." + (" ז'קט פגום הושבת." if damaged & ids else ""))
+    return _back(request, redirect("order_detail", pk=pk))
 
 
 @require_POST
@@ -257,6 +306,7 @@ def order_action(request, pk):
         order.paid = True
         order.save(update_fields=["paid"])
         messages.success(request, "סומן ששולם.")
+        return _back(request, redirect("order_detail", pk=pk))
     elif a == "stop_late":
         order.late_reminders_stopped = not order.late_reminders_stopped
         order.save(update_fields=["late_reminders_stopped"])
@@ -303,6 +353,7 @@ def inventory(request):
                 else:
                     j.delete()
                     messages.success(request, "הז'קט נמחק.")
+            return _back(request, redirect("inventory"))
         elif a == "save_model":
             mid = request.POST.get("model_id")
             m = get_object_or_404(JacketModel, pk=mid) if mid else JacketModel()
